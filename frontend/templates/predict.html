@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block page_title %}Shipment Delay Risk Prediction{% endblock %}
+
+{% block content %}
+<div class="grid-2col">
+    <!-- Prediction Input Form -->
+    <div class="card-panel">
+        <div class="card-header">
+            <h2 class="card-title">Dispatch Parameters</h2>
+        </div>
+        <form id="predictionForm">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="origin_city">Origin City</label>
+                    <select id="origin_city" name="origin_city" required>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Bangalore">Bangalore</option>
+                        <option value="Chennai">Chennai</option>
+                        <option value="Kolkata">Kolkata</option>
+                        <option value="Hyderabad">Hyderabad</option>
+                        <option value="Pune">Pune</option>
+                        <option value="Ahmedabad">Ahmedabad</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="destination_city">Destination City</label>
+                    <select id="destination_city" name="destination_city" required>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Bangalore">Bangalore</option>
+                        <option value="Chennai">Chennai</option>
+                        <option value="Kolkata">Kolkata</option>
+                        <option value="Hyderabad">Hyderabad</option>
+                        <option value="Pune">Pune</option>
+                        <option value="Jaipur">Jaipur</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="vehicle_type">Transport Vehicle</label>
+                    <select id="vehicle_type" name="vehicle_type">
+                        <option value="Truck">Heavy Truck</option>
+                        <option value="Van">Delivery Van</option>
+                        <option value="Mini-Truck">Mini-Truck</option>
+                        <option value="Rail">Freight Rail</option>
+                        <option value="Air Cargo">Air Cargo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="carrier">Logistics Carrier</label>
+                    <select id="carrier" name="carrier">
+                        <option value="BlueDart">BlueDart</option>
+                        <option value="Delhivery">Delhivery</option>
+                        <option value="DTDC">DTDC</option>
+                        <option value="FedEx India">FedEx India</option>
+                        <option value="Ecom Express">Ecom Express</option>
+                        <option value="DHL India">DHL India</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="distance_km">Route Distance (km)</label>
+                    <input type="number" id="distance_km" name="distance_km" value="1420" min="10" max="5000" step="10" required>
+                </div>
+                <div class="form-group">
+                    <label for="weight_kg">Cargo Weight (kg)</label>
+                    <input type="number" id="weight_kg" name="weight_kg" value="450" min="1" max="10000" step="10" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="category">Commodity Category</label>
+                    <select id="category" name="category">
+                        <option value="Electronics">Electronics</option>
+                        <option value="Clothing">Apparel / Clothing</option>
+                        <option value="Pharmaceuticals">Pharmaceuticals</option>
+                        <option value="Perishables">Perishables / Food</option>
+                        <option value="Automotive Parts">Automotive Parts</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="scheduled_hour">Scheduled Departure Hour (0-23)</label>
+                    <input type="number" id="scheduled_hour" name="scheduled_hour" value="8" min="0" max="23">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" id="predictBtn">
+                ⚡ Predict Delay Risk
+            </button>
+        </form>
+    </div>
+
+    <!-- Prediction Results Display -->
+    <div class="card-panel">
+        <div class="card-header">
+            <h2 class="card-title">Prediction Intelligence</h2>
+        </div>
+
+        <div id="predictionEmpty" style="text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🤖</div>
+            <p>Enter dispatch parameters and click <strong>Predict Delay Risk</strong> to evaluate transit vulnerability.</p>
+        </div>
+
+        <div id="predictionResult" style="display: none;">
+            <div style="text-align: center; padding: 1.5rem 0; border-bottom: 1px solid var(--border-color);">
+                <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Calculated Risk Tier</div>
+                <div id="riskBadge" style="display: inline-block; padding: 0.5rem 1.5rem; font-size: 1.5rem; font-weight: 700; border-radius: 30px; margin: 0.75rem 0;">
+                    --
+                </div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary);" id="riskSubtitle">--</div>
+            </div>
+
+            <div style="padding: 1.25rem 0; border-bottom: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.85rem;">
+                    <span>Delay Probability</span>
+                    <strong id="probText">0%</strong>
+                </div>
+                <div style="background: #1e293b; height: 10px; border-radius: 5px; overflow: hidden;">
+                    <div id="probBar" style="background: var(--accent-blue); height: 100%; width: 0%; transition: width 0.4s ease;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+                    <span>Model Confidence</span>
+                    <strong id="confText">--%</strong>
+                </div>
+            </div>
+
+            <div style="padding-top: 1.25rem;">
+                <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">Contributing Risk Factors</h3>
+                <ul id="factorsList" style="list-style-type: none; display: flex; flex-direction: column; gap: 0.5rem;">
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById("predictionForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("predictBtn");
+    btn.disabled = true;
+    btn.innerText = "Evaluating with Random Forest...";
+
+    const payload = {
+        origin_city: document.getElementById("origin_city").value,
+        destination_city: document.getElementById("destination_city").value,
+        vehicle_type: document.getElementById("vehicle_type").value,
+        carrier: document.getElementById("carrier").value,
+        category: document.getElementById("category").value,
+        distance_km: parseFloat(document.getElementById("distance_km").value),
+        weight_kg: parseFloat(document.getElementById("weight_kg").value),
+        scheduled_hour: parseInt(document.getElementById("scheduled_hour").value),
+    };
+
+    try {
+        const res = await fetch("/api/v1/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+            const d = json.data;
+            document.getElementById("predictionEmpty").style.display = "none";
+            document.getElementById("predictionResult").style.display = "block";
+
+            const badge = document.getElementById("riskBadge");
+            const probBar = document.getElementById("probBar");
+            badge.innerText = d.delay_risk + " Risk";
+
+            if (d.delay_risk === "High") {
+                badge.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
+                badge.style.color = "var(--danger)";
+                probBar.style.backgroundColor = "var(--danger)";
+                document.getElementById("riskSubtitle").innerText = "Significant probability of dispatch delay (>65%)";
+            } else if (d.delay_risk === "Medium") {
+                badge.style.backgroundColor = "rgba(245, 158, 11, 0.2)";
+                badge.style.color = "var(--warning)";
+                probBar.style.backgroundColor = "var(--warning)";
+                document.getElementById("riskSubtitle").innerText = "Moderate vulnerability to route traffic and scheduling";
+            } else {
+                badge.style.backgroundColor = "rgba(16, 185, 129, 0.2)";
+                badge.style.color = "var(--success)";
+                probBar.style.backgroundColor = "var(--success)";
+                document.getElementById("riskSubtitle").innerText = "High likelihood of on-time arrival";
+            }
+
+            const pct = Math.round(d.delay_probability * 100);
+            document.getElementById("probText").innerText = pct + "%";
+            probBar.style.width = pct + "%";
+            document.getElementById("confText").innerText = Math.round(d.confidence * 100) + "%";
+
+            const list = document.getElementById("factorsList");
+            list.innerHTML = d.contributing_factors.map(f => `
+                <li style="display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                    <span style="color: var(--accent-blue);">•</span> <span>${f}</span>
+                </li>
+            `).join("");
+        }
+    } catch (err) {
+        alert("Error requesting prediction: " + err);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "⚡ Predict Delay Risk";
+    }
+});
+</script>
+{% endblock %}
+

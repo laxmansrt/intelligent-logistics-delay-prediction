@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block page_title %}Logistics Intelligence Dashboard{% endblock %}
+
+{% block content %}
+<!-- KPI Overview Cards -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <span class="kpi-label">Total Shipments</span>
+        <div class="kpi-value" id="kpi-total">--</div>
+        <span class="kpi-sub" id="kpi-total-sub">Processed through BDT pipeline</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-label">On-Time Deliveries</span>
+        <div class="kpi-value" style="color: var(--success);" id="kpi-ontime">--</div>
+        <span class="kpi-sub" id="kpi-ontime-sub">Successful deliveries</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-label">Delayed Shipments</span>
+        <div class="kpi-value" style="color: var(--danger);" id="kpi-delayed">--</div>
+        <span class="kpi-sub" id="kpi-delayed-sub">Exceeded planned delivery</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-label">Delay Percentage</span>
+        <div class="kpi-value" style="color: var(--warning);" id="kpi-delay-rate">--%</div>
+        <span class="kpi-sub">Overall system delay frequency</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-label">Average Delay</span>
+        <div class="kpi-value" id="kpi-avg-delay">-- mins</div>
+        <span class="kpi-sub">Mean delay duration</span>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid-2col">
+    <div class="card-panel">
+        <div class="card-header">
+            <h2 class="card-title">Delay Contributors Breakdown</h2>
+        </div>
+        <div style="height: 280px; position: relative;">
+            <canvas id="delayReasonsChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card-panel">
+        <div class="card-header">
+            <h2 class="card-title">Carrier Delay Performance</h2>
+        </div>
+        <div style="height: 280px; position: relative;">
+            <canvas id="carrierPerformanceChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Shipments & Quick Actions -->
+<div class="card-panel">
+    <div class="card-header">
+        <h2 class="card-title">Recent Shipment Dispatches</h2>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="/shipments-page" class="btn btn-outline" style="font-size: 0.8rem;">View All Shipments</a>
+            <a href="/predict-page" class="btn btn-primary" style="font-size: 0.8rem;">+ Predict Delay</a>
+        </div>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Shipment ID</th>
+                    <th>Origin</th>
+                    <th>Destination</th>
+                    <th>Carrier</th>
+                    <th>Vehicle</th>
+                    <th>Distance</th>
+                    <th>Scheduled Delivery</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="recent-shipments-body">
+                <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading shipments...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    // 1. Fetch KPIs
+    try {
+        const res = await fetch("/api/v1/shipments/stats/summary");
+        const json = await res.json();
+        if (json.success && json.data) {
+            const d = json.data;
+            document.getElementById("kpi-total").innerText = d.total_shipments.toLocaleString();
+            document.getElementById("kpi-ontime").innerText = d.on_time_shipments.toLocaleString();
+            document.getElementById("kpi-delayed").innerText = d.delayed_shipments.toLocaleString();
+            document.getElementById("kpi-delay-rate").innerText = d.delay_percentage + "%";
+            document.getElementById("kpi-avg-delay").innerText = d.avg_delay_minutes + " mins";
+        }
+    } catch (e) {
+        console.error("Failed to load KPIs", e);
+    }
+
+    // 2. Delay Reasons Doughnut Chart
+    try {
+        const res = await fetch("/api/v1/analytics/delay-reasons");
+        const json = await res.json();
+        if (json.success && json.data) {
+            new Chart(document.getElementById("delayReasonsChart"), {
+                type: "doughnut",
+                data: {
+                    labels: json.data.labels,
+                    datasets: [{
+                        data: json.data.counts,
+                        backgroundColor: ["#ef4444", "#f59e0b", "#38bdf8", "#6366f1", "#10b981", "#ec4899", "#8b5cf6"],
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: "right", labels: { color: "#94a3b8", boxWidth: 12 } }
+                    }
+                }
+            });
+        }
+    } catch (e) {
+        console.error("Failed to load delay reasons", e);
+    }
+
+    // 3. Carrier Performance Bar Chart
+    try {
+        const res = await fetch("/api/v1/analytics/carrier-performance");
+        const json = await res.json();
+        if (json.success && json.data) {
+            new Chart(document.getElementById("carrierPerformanceChart"), {
+                type: "bar",
+                data: {
+                    labels: json.data.labels,
+                    datasets: [{
+                        label: "Delay Rate (%)",
+                        data: json.data.delay_rates,
+                        backgroundColor: "#38bdf8",
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
+                        x: { grid: { display: false }, ticks: { color: "#94a3b8" } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    } catch (e) {
+        console.error("Failed to load carrier performance", e);
+    }
+
+    // 4. Load Recent Shipments Table
+    try {
+        const res = await fetch("/api/v1/shipments?per_page=6");
+        const json = await res.json();
+        const tbody = document.getElementById("recent-shipments-body");
+        if (json.success && json.data.length > 0) {
+            tbody.innerHTML = json.data.map(s => {
+                const isDelayed = s.is_delayed === 1;
+                const badgeClass = isDelayed ? "badge-danger" : "badge-success";
+                const statusText = isDelayed ? `Delayed (+${s.delay_minutes || 0}m)` : "On-Time";
+                return `
+                    <tr>
+                        <td><strong>${s.shipment_id}</strong></td>
+                        <td>${s.origin_city}</td>
+                        <td>${s.destination_city}</td>
+                        <td>${s.carrier}</td>
+                        <td>${s.vehicle_type}</td>
+                        <td>${s.distance_km} km</td>
+                        <td>${new Date(s.scheduled_delivery).toLocaleDateString()}</td>
+                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            }).join("");
+        } else {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No shipment records available. Ingest sample data from the Upload page.</td></tr>`;
+        }
+    } catch (e) {
+        console.error("Failed to load shipments", e);
+    }
+});
+</script>
+{% endblock %}

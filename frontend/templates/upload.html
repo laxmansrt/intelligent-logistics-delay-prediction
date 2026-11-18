@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block page_title %}Dataset Ingestion & Storage Architecture{% endblock %}
+
+{% block content %}
+<div class="grid-2col">
+    <!-- Upload Form -->
+    <div class="card-panel">
+        <div class="card-header">
+            <h2 class="card-title">Upload Dataset (CSV)</h2>
+            <span class="badge badge-info">Max 50 MB</span>
+        </div>
+        <form id="uploadForm">
+            <div class="form-group">
+                <label for="dataset_type">Dataset Category</label>
+                <select id="dataset_type" name="dataset_type" required>
+                    <option value="shipments">Shipment Records (shipments.csv)</option>
+                    <option value="traffic">Traffic Conditions (traffic.csv)</option>
+                    <option value="weather">Weather Observations (weather.csv)</option>
+                    <option value="gps">GPS Telematics (gps.csv)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="csvFile">Select CSV File</label>
+                <input type="file" id="csvFile" name="file" accept=".csv" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="uploadBtn" style="width: 100%;">
+                📤 Upload & Ingest into Pipeline
+            </button>
+        </form>
+
+        <div id="uploadFeedback" style="margin-top: 1rem; display: none; padding: 1rem; border-radius: 8px; font-size: 0.85rem;"></div>
+    </div>
+
+    <!-- Demonstration & Sample Data Loader -->
+    <div class="card-panel">
+        <div class="card-header">
+            <h2 class="card-title">Demo Dataset Quick Ingestion</h2>
+            <span class="badge badge-warning">Synthetic Fallback</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.25rem;">
+            Quickly populate the MongoDB database and HDFS/local storage mirror with pre-generated multi-source logistics records (~2,000 shipments, ~3,000 traffic records, ~1,500 weather points, ~8,000 GPS traces).
+        </p>
+
+        <div style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid var(--warning); padding: 0.75rem 1rem; border-radius: 4px; margin-bottom: 1.25rem;">
+            <div style="font-size: 0.8rem; color: var(--warning); font-weight: 600;">Data Provenance Disclosure</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                All sample records are synthetically generated for academic demonstration. For production evaluation, upload public benchmark datasets (e.g., from Kaggle).
+            </div>
+        </div>
+
+        <button class="btn btn-success" id="loadSampleBtn" style="width: 100%;">
+            ⚡ Ingest Bundled Sample Datasets
+        </button>
+
+        <div id="sampleFeedback" style="margin-top: 1rem; display: none; font-size: 0.85rem; padding: 0.75rem; border-radius: 8px;"></div>
+    </div>
+</div>
+
+<!-- Storage Directory Architecture -->
+<div class="card-panel">
+    <div class="card-header">
+        <h2 class="card-title">Stored Datasets (HDFS / Local Storage Mirror)</h2>
+        <button class="btn btn-outline" id="refreshFilesBtn" style="font-size: 0.8rem;">Refresh</button>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>Storage Path</th>
+                    <th>File Size</th>
+                    <th>Last Modified</th>
+                </tr>
+            </thead>
+            <tbody id="filesTableBody">
+                <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Loading stored files...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 1. Upload Form
+document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("uploadBtn");
+    const fb = document.getElementById("uploadFeedback");
+    const fileInput = document.getElementById("csvFile");
+    const dtype = document.getElementById("dataset_type").value;
+
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert("Please choose a CSV file.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    btn.disabled = true;
+    btn.innerText = "Ingesting...";
+    fb.style.display = "none";
+
+    try {
+        const res = await fetch(`/api/v1/upload/${dtype}`, {
+            method: "POST",
+            body: formData,
+        });
+        const json = await res.json();
+        fb.style.display = "block";
+        if (json.success) {
+            fb.style.backgroundColor = "rgba(16, 185, 129, 0.2)";
+            fb.style.color = "var(--success)";
+            fb.innerText = `✓ Successfully ingested ${json.data.records_inserted} records!`;
+            fileInput.value = "";
+            loadFiles();
+        } else {
+            fb.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
+            fb.style.color = "var(--danger)";
+            fb.innerText = `✗ Ingestion failed: ${json.message || json.error}`;
+        }
+    } catch (err) {
+        fb.style.display = "block";
+        fb.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
+        fb.style.color = "var(--danger)";
+        fb.innerText = `✗ Upload error: ${err}`;
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "📤 Upload & Ingest into Pipeline";
+    }
+});
+
+// 2. Load Sample Data
+document.getElementById("loadSampleBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("loadSampleBtn");
+    const fb = document.getElementById("sampleFeedback");
+    btn.disabled = true;
+    btn.innerText = "Ingesting 14,000+ records...";
+    fb.style.display = "none";
+
+    try {
+        const res = await fetch("/api/v1/upload/load-sample", { method: "POST" });
+        const json = await res.json();
+        fb.style.display = "block";
+        if (json.success) {
+            fb.style.backgroundColor = "rgba(16, 185, 129, 0.2)";
+            fb.style.color = "var(--success)";
+            fb.innerText = `✓ Sample data loaded! Total records inserted: ${json.data.total_inserted.toLocaleString()}`;
+            loadFiles();
+        } else {
+            fb.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
+            fb.style.color = "var(--danger)";
+            fb.innerText = `✗ Error: ${json.message}`;
+        }
+    } catch (err) {
+        fb.style.display = "block";
+        fb.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
+        fb.style.color = "var(--danger)";
+        fb.innerText = `✗ Request failed: ${err}`;
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "⚡ Ingest Bundled Sample Datasets";
+    }
+});
+
+// 3. Stored Files Table
+async function loadFiles() {
+    try {
+        const res = await fetch("/api/v1/upload/files");
+        const json = await res.json();
+        const tbody = document.getElementById("filesTableBody");
+        if (json.success && json.data.files.length > 0) {
+            tbody.innerHTML = json.data.files.map(f => `
+                <tr>
+                    <td><strong>${f.name}</strong></td>
+                    <td style="font-family: monospace; font-size: 0.8rem; color: var(--accent-blue);">${f.path}</td>
+                    <td>${f.size_kb} KB</td>
+                    <td>${new Date(f.modified).toLocaleString()}</td>
+                </tr>
+            `).join("");
+        } else {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No files uploaded in raw storage yet.</td></tr>`;
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+document.getElementById("refreshFilesBtn").addEventListener("click", loadFiles);
+document.addEventListener("DOMContentLoaded", loadFiles);
+</script>
+{% endblock %}
+

@@ -1,0 +1,58 @@
+# ============================================================
+# .gitignore — INTELLIGENT LOGISTICS DELAY PREDICTION PROJECT
+# ============================================================
+
+# --- Environment & Secrets ---
+.env
+*.env
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# --- Data Files (large, regeneratable) ---
+data/raw/
+data/processed/
+data/analytics/
+# Keep sample data
+!data/sample/
+
+# --- ML Models (large binaries) ---
+data/models/*.joblib
+data/models/*.pkl
+
+# --- Logs ---
+logs/
+*.log
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# --- Pytest Cache ---
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Spark Temp ---
+spark-warehouse/
+derby.log
+metastore_db/
+

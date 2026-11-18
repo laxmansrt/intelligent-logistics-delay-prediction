@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block page_title %}Shipment Tracking Registry{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+    <!-- Filter Controls -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 100px; gap: 1rem; margin-bottom: 1.5rem; align-items: flex-end;">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="filterSearch">Search ID / City</label>
+            <input type="text" id="filterSearch" placeholder="e.g. SHP-2023 or Mumbai">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="filterCarrier">Carrier</label>
+            <select id="filterCarrier">
+                <option value="">All Carriers</option>
+                <option value="BlueDart">BlueDart</option>
+                <option value="Delhivery">Delhivery</option>
+                <option value="DTDC">DTDC</option>
+                <option value="FedEx India">FedEx India</option>
+                <option value="Ecom Express">Ecom Express</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="filterStatus">Delivery Status</label>
+            <select id="filterStatus">
+                <option value="">All Statuses</option>
+                <option value="0">On-Time Only</option>
+                <option value="1">Delayed Only</option>
+            </select>
+        </div>
+        <div>
+            <button class="btn btn-primary" id="applyFiltersBtn" style="width: 100%;">Filter</button>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Shipment ID</th>
+                    <th>Origin</th>
+                    <th>Destination</th>
+                    <th>Carrier</th>
+                    <th>Vehicle</th>
+                    <th>Distance</th>
+                    <th>Weight</th>
+                    <th>Category</th>
+                    <th>Scheduled Delivery</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="shipmentsTableBody">
+                <tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading shipment records...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem;">
+        <div style="font-size: 0.85rem; color: var(--text-secondary);" id="paginationInfo">Showing 0 of 0</div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-outline" id="prevPageBtn" disabled>&laquo; Prev</button>
+            <button class="btn btn-outline" id="nextPageBtn" disabled>Next &raquo;</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+const perPage = 15;
+
+async function loadShipments(page = 1) {
+    currentPage = page;
+    const search = document.getElementById("filterSearch").value.trim();
+    const carrier = document.getElementById("filterCarrier").value;
+    const status = document.getElementById("filterStatus").value;
+
+    let url = `/api/v1/shipments?page=${page}&per_page=${perPage}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (carrier) url += `&carrier=${encodeURIComponent(carrier)}`;
+    if (status !== "") url += `&is_delayed=${status}`;
+
+    try {
+        const res = await fetch(url);
+        const json = await res.json();
+        const tbody = document.getElementById("shipmentsTableBody");
+
+        if (json.success && json.data.length > 0) {
+            tbody.innerHTML = json.data.map(s => {
+                const isDelayed = s.is_delayed === 1;
+                const badgeClass = isDelayed ? "badge-danger" : "badge-success";
+                const statusText = isDelayed ? `Delayed (+${s.delay_minutes || 0}m)` : "On-Time";
+                return `
+                    <tr>
+                        <td><strong>${s.shipment_id}</strong></td>
+                        <td>${s.origin_city}</td>
+                        <td>${s.destination_city}</td>
+                        <td>${s.carrier}</td>
+                        <td>${s.vehicle_type}</td>
+                        <td>${s.distance_km} km</td>
+                        <td>${s.weight_kg} kg</td>
+                        <td>${s.category}</td>
+                        <td>${new Date(s.scheduled_delivery).toLocaleDateString()}</td>
+                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            }).join("");
+
+            const meta = json.meta || { page: 1, total: json.data.length, total_pages: 1 };
+            document.getElementById("paginationInfo").innerText = `Page ${meta.page} of ${meta.total_pages} (${meta.total.toLocaleString()} total shipments)`;
+            document.getElementById("prevPageBtn").disabled = meta.page <= 1;
+            document.getElementById("nextPageBtn").disabled = meta.page >= meta.total_pages;
+        } else {
+            tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">No shipments match your search criteria.</td></tr>`;
+            document.getElementById("paginationInfo").innerText = "0 shipments found";
+            document.getElementById("prevPageBtn").disabled = true;
+            document.getElementById("nextPageBtn").disabled = true;
+        }
+    } catch (e) {
+        console.error("Failed to load shipments", e);
+    }
+}
+
+document.getElementById("applyFiltersBtn").addEventListener("click", () => loadShipments(1));
+document.getElementById("prevPageBtn").addEventListener("click", () => { if (currentPage > 1) loadShipments(currentPage - 1); });
+document.getElementById("nextPageBtn").addEventListener("click", () => loadShipments(currentPage + 1));
+
+document.addEventListener("DOMContentLoaded", () => loadShipments(1));
+</script>
+{% endblock %}
+

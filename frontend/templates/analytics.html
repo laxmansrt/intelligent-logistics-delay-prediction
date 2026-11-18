@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block page_title %}Delay Reason & Route Analytics{% endblock %}
+
+{% block content %}
+<!-- Charts Row -->
+<div class="grid-2col">
+    <div class="card-panel">
+        <div class="card-header">
+            <h2 class="card-title">Vehicle Type Transit Delay Rates</h2>
+        </div>
+        <div style="height: 280px; position: relative;">
+            <canvas id="vehicleDelayChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card-panel">
+        <div class="card-header">
+            <h2 class="card-title">Carrier Comparative Delay Rates</h2>
+        </div>
+        <div style="height: 280px; position: relative;">
+            <canvas id="carrierCompareChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- High Risk Route Table -->
+<div class="card-panel">
+    <div class="card-header">
+        <h2 class="card-title">Route Bottleneck & Risk Identification</h2>
+        <span class="badge badge-warning">Spark Aggregated</span>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Route (Origin &rarr; Destination)</th>
+                    <th>Total Dispatches</th>
+                    <th>Delayed Count</th>
+                    <th>Delay Rate (%)</th>
+                    <th>Average Distance</th>
+                    <th>Bottleneck Risk</th>
+                </tr>
+            </thead>
+            <tbody id="routesTableBody">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Loading route performance metrics...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Statistical Guidance: Correlation vs Causation -->
+<div class="card-panel" style="border-left: 4px solid var(--accent-blue);">
+    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--accent-blue);">
+        💡 Big Data Analytical Note: Correlation vs. Causation in Logistics
+    </h3>
+    <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+        Statistical correlation indicates observable co-occurrence (e.g., shipments during monsoon months or heavy truck transit routes exhibit higher delay frequencies). However, correlation does not guarantee direct causation without controlled attribution (e.g., heavy trucks may predominantly be scheduled on long-distance interstate highways with roadwork, rather than the vehicle itself causing the delay). Predictive intelligence accounts for combined multi-factor influences.
+    </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    // 1. Vehicle Chart
+    try {
+        const res = await fetch("/api/v1/analytics/vehicle-performance");
+        const json = await res.json();
+        if (json.success && json.data) {
+            new Chart(document.getElementById("vehicleDelayChart"), {
+                type: "bar",
+                data: {
+                    labels: json.data.labels,
+                    datasets: [{
+                        label: "Delay Rate (%)",
+                        data: json.data.delay_rates,
+                        backgroundColor: "#6366f1",
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
+                        x: { grid: { display: false }, ticks: { color: "#94a3b8" } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    } catch (e) {
+        console.error(e);
+    }
+
+    // 2. Carrier Compare Chart
+    try {
+        const res = await fetch("/api/v1/analytics/carrier-performance");
+        const json = await res.json();
+        if (json.success && json.data) {
+            new Chart(document.getElementById("carrierCompareChart"), {
+                type: "bar",
+                data: {
+                    labels: json.data.labels,
+                    datasets: [{
+                        label: "Delay Rate (%)",
+                        data: json.data.delay_rates,
+                        backgroundColor: "#10b981",
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
+                        x: { grid: { display: false }, ticks: { color: "#94a3b8" } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    } catch (e) {
+        console.error(e);
+    }
+
+    // 3. Route Performance Table
+    try {
+        const res = await fetch("/api/v1/analytics/route-performance");
+        const json = await res.json();
+        const tbody = document.getElementById("routesTableBody");
+        if (json.success && json.data.routes.length > 0) {
+            tbody.innerHTML = json.data.routes.map(r => {
+                const rate = r.delay_rate_pct || 0;
+                let riskBadge = "badge-success";
+                let riskLabel = "Low";
+                if (rate >= 45) { riskBadge = "badge-danger"; riskLabel = "High"; }
+                else if (rate >= 25) { riskBadge = "badge-warning"; riskLabel = "Medium"; }
+
+                return `
+                    <tr>
+                        <td><strong>${r.origin_city} &rarr; ${r.destination_city}</strong></td>
+                        <td>${r.total_shipments}</td>
+                        <td>${r.delayed_shipments}</td>
+                        <td>${rate.toFixed(1)}%</td>
+                        <td>${Math.round(r.avg_distance_km || 0)} km</td>
+                        <td><span class="badge ${riskBadge}">${riskLabel}</span></td>
+                    </tr>
+                `;
+            }).join("");
+        } else {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No route statistics available.</td></tr>`;
+        }
+    } catch (e) {
+        console.error(e);
+    }
+});
+</script>
+{% endblock %}
+

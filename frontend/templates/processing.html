@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block page_title %}Big Data Processing & Distributed Jobs{% endblock %}
+
+{% block content %}
+<!-- Processing Action Cards -->
+<div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+    <div class="card-panel" style="margin-bottom: 0;">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⚡</div>
+        <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 0.4rem;">PySpark Data Cleaning & ETL</h3>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Executes distributed DataFrame deduplication, type casting, missing value imputation, and partitioning.
+        </p>
+        <button class="btn btn-primary" id="runSparkEtlBtn" style="width: 100%;">Run PySpark ETL Job</button>
+    </div>
+
+    <div class="card-panel" style="margin-bottom: 0;">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🗺️</div>
+        <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 0.4rem;">PySpark Route Analyzer</h3>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Distributed grouping and window aggregations calculating bottleneck delay rates and risk tiers.
+        </p>
+        <button class="btn btn-outline" id="runSparkRoutesBtn" style="width: 100%;">Run Route Analysis</button>
+    </div>
+
+    <div class="card-panel" style="margin-bottom: 0;">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⚙️</div>
+        <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 0.4rem;">Hadoop MapReduce Batch Job</h3>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Executes streaming Mapper (shipment_mapper.py) and Reducer (shipment_reducer.py) batch aggregation.
+        </p>
+        <button class="btn btn-success" id="runMapReduceBtn" style="width: 100%;">Run MapReduce Job</button>
+    </div>
+</div>
+
+<!-- Terminal Log Console -->
+<div class="card-panel" style="margin-top: 1.75rem;">
+    <div class="card-header">
+        <h2 class="card-title">Execution Logs & Metrics</h2>
+        <span class="badge badge-info" id="consoleStatus">Idle</span>
+    </div>
+    <div class="terminal" id="terminalOutput">BDT Processing Console ready. Click any job above to trigger execution.</div>
+</div>
+
+<!-- Job History Table -->
+<div class="card-panel">
+    <div class="card-header">
+        <h2 class="card-title">Processing Jobs History</h2>
+        <button class="btn btn-outline" id="refreshJobsBtn" style="font-size: 0.8rem;">Refresh</button>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Job ID</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Started At</th>
+                    <th>Records Processed</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody id="jobsTableBody">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Loading job history...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function logToTerminal(msg) {
+    const term = document.getElementById("terminalOutput");
+    const ts = new Date().toLocaleTimeString();
+    term.textContent += `\n[${ts}] ${msg}`;
+    term.scrollTop = term.scrollHeight;
+}
+
+async function triggerJob(url, btnId, jobName) {
+    const btn = document.getElementById(btnId);
+    const origText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "Executing...";
+    document.getElementById("consoleStatus").innerText = "Running " + jobName;
+    document.getElementById("consoleStatus").className = "badge badge-warning";
+    logToTerminal(`Triggering ${jobName}...`);
+
+    try {
+        const res = await fetch(url, { method: "POST" });
+        const json = await res.json();
+        if (json.success) {
+            logToTerminal(`✓ ${jobName} completed successfully!`);
+            logToTerminal(JSON.stringify(json.data, null, 2));
+            document.getElementById("consoleStatus").innerText = "Success";
+            document.getElementById("consoleStatus").className = "badge badge-success";
+        } else {
+            logToTerminal(`✗ ${jobName} failed: ${json.message || json.error}`);
+            document.getElementById("consoleStatus").innerText = "Failed";
+            document.getElementById("consoleStatus").className = "badge badge-danger";
+        }
+    } catch (e) {
+        logToTerminal(`✗ Error: ${e}`);
+        document.getElementById("consoleStatus").innerText = "Error";
+        document.getElementById("consoleStatus").className = "badge badge-danger";
+    } finally {
+        btn.disabled = false;
+        btn.innerText = origText;
+        loadJobsHistory();
+    }
+}
+
+document.getElementById("runSparkEtlBtn").addEventListener("click", () => {
+    triggerJob("/api/v1/jobs/spark/run", "runSparkEtlBtn", "PySpark ETL");
+});
+
+document.getElementById("runSparkRoutesBtn").addEventListener("click", () => {
+    triggerJob("/api/v1/jobs/spark/routes", "runSparkRoutesBtn", "Route Analyzer");
+});
+
+document.getElementById("runMapReduceBtn").addEventListener("click", () => {
+    triggerJob("/api/v1/jobs/mapreduce/run", "runMapReduceBtn", "MapReduce Batch Job");
+});
+
+async function loadJobsHistory() {
+    try {
+        const res = await fetch("/api/v1/jobs");
+        const json = await res.json();
+        const tbody = document.getElementById("jobsTableBody");
+        if (json.success && json.data.jobs.length > 0) {
+            tbody.innerHTML = json.data.jobs.map(j => {
+                const isSuccess = j.status === "completed";
+                const badgeClass = isSuccess ? "badge-success" : (j.status === "running" ? "badge-warning" : "badge-danger");
+                const processed = j.details ? (j.details.final_records || j.details.records_aggregated || "--") : "--";
+                return `
+                    <tr>
+                        <td><strong>${j.job_id}</strong></td>
+                        <td>${j.job_type}</td>
+                        <td><span class="badge ${badgeClass}">${j.status}</span></td>
+                        <td>${new Date(j.started_at).toLocaleString()}</td>
+                        <td>${processed}</td>
+                        <td style="font-size: 0.75rem; color: var(--text-muted);">${j.details?.output_path || "In-memory"}</td>
+                    </tr>
+                `;
+            }).join("");
+        } else {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No job history recorded yet. Run a job above!</td></tr>`;
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+document.getElementById("refreshJobsBtn").addEventListener("click", loadJobsHistory);
+document.addEventListener("DOMContentLoaded", loadJobsHistory);
+</script>
+{% endblock %}
+

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block page_title %}Machine Learning Model Evaluation{% endblock %}
+
+{% block content %}
+<!-- Model Comparison Section -->
+<div class="card-panel">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Model Benchmark: Baseline vs. Primary Classifier</h2>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+                Evaluated on 20% holdout test split (Stratified, Random State: 42)
+            </div>
+        </div>
+        <button class="btn btn-primary" id="retrainBtn">🔄 Retrain & Evaluate</button>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Model Name</th>
+                    <th>Model Type</th>
+                    <th>Accuracy</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1-Score</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Logistic Regression</strong></td>
+                    <td>Linear Benchmark</td>
+                    <td id="base-acc">64.25%</td>
+                    <td id="base-prec">0.3333</td>
+                    <td id="base-rec">0.0833</td>
+                    <td id="base-f1">0.1333</td>
+                    <td><span class="badge badge-info">Baseline</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Random Forest Classifier</strong></td>
+                    <td>Ensemble Decision Trees (100 Trees)</td>
+                    <td id="rf-acc" style="color: var(--success); font-weight: 700;">66.00%</td>
+                    <td id="rf-prec">0.1667</td>
+                    <td id="rf-rec">0.0076</td>
+                    <td id="rf-f1" style="color: var(--success); font-weight: 700;">0.0145</td>
+                    <td><span class="badge badge-success">Active Deployment</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Evaluation Charts Row -->
+<div class="grid-2col">
+    <!-- Feature Importances -->
+    <div class="card-panel">
+        <div class="card-header">
+            <h2 class="card-title">Top Feature Importances (Random Forest)</h2>
+        </div>
+        <div style="height: 300px; position: relative;">
+            <canvas id="featureImportanceChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Confusion Matrix & Training Info -->
+    <div class="card-panel">
+        <div class="card-header">
+            <h2 class="card-title">Test Confusion Matrix (Random Forest)</h2>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px;">
+            <div style="display: grid; grid-template-columns: 80px 110px 110px; gap: 8px; text-align: center; font-size: 0.85rem;">
+                <div></div>
+                <div style="font-weight: 600; color: var(--text-secondary);">Pred: On-Time</div>
+                <div style="font-weight: 600; color: var(--text-secondary);">Pred: Delayed</div>
+
+                <div style="font-weight: 600; color: var(--text-secondary); display: flex; align-items: center;">True: On-Time</div>
+                <div style="background: rgba(16, 185, 129, 0.2); border: 1px solid var(--success); padding: 1.25rem; border-radius: 8px;">
+                    <div style="font-size: 1.4rem; font-weight: 700; color: var(--success);" id="cm-tn">263</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">True Negative</div>
+                </div>
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #334155; padding: 1.25rem; border-radius: 8px;">
+                    <div style="font-size: 1.4rem; font-weight: 700; color: var(--text-secondary);" id="cm-fp">5</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">False Positive</div>
+                </div>
+
+                <div style="font-weight: 600; color: var(--text-secondary); display: flex; align-items: center;">True: Delayed</div>
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #334155; padding: 1.25rem; border-radius: 8px;">
+                    <div style="font-size: 1.4rem; font-weight: 700; color: var(--text-secondary);" id="cm-fn">131</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">False Negative</div>
+                </div>
+                <div style="background: rgba(16, 185, 129, 0.2); border: 1px solid var(--success); padding: 1.25rem; border-radius: 8px;">
+                    <div style="font-size: 1.4rem; font-weight: 700; color: var(--success);" id="cm-tp">1</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">True Positive</div>
+                </div>
+            </div>
+            <div style="margin-top: 1rem; font-size: 0.78rem; color: var(--text-muted);">
+                Test samples: 400 | Target: is_delayed (0 or 1)
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let featureChart = null;
+
+async function loadModelMetrics() {
+    try {
+        const res = await fetch("/api/v1/analytics/model-metrics");
+        const json = await res.json();
+        if (json.success && json.data) {
+            const data = json.data;
+            const b = data.baseline_model;
+            const p = data.primary_model;
+
+            if (b) {
+                document.getElementById("base-acc").innerText = (b.accuracy * 100).toFixed(2) + "%";
+                document.getElementById("base-prec").innerText = b.precision.toFixed(4);
+                document.getElementById("base-rec").innerText = b.recall.toFixed(4);
+                document.getElementById("base-f1").innerText = b.f1_score.toFixed(4);
+            }
+
+            if (p) {
+                document.getElementById("rf-acc").innerText = (p.accuracy * 100).toFixed(2) + "%";
+                document.getElementById("rf-prec").innerText = p.precision.toFixed(4);
+                document.getElementById("rf-rec").innerText = p.recall.toFixed(4);
+                document.getElementById("rf-f1").innerText = p.f1_score.toFixed(4);
+
+                if (p.confusion_matrix && p.confusion_matrix.length === 2) {
+                    document.getElementById("cm-tn").innerText = p.confusion_matrix[0][0];
+                    document.getElementById("cm-fp").innerText = p.confusion_matrix[0][1];
+                    document.getElementById("cm-fn").innerText = p.confusion_matrix[1][0];
+                    document.getElementById("cm-tp").innerText = p.confusion_matrix[1][1];
+                }
+
+                // Feature Importances
+                if (p.top_feature_importances) {
+                    const labels = Object.keys(p.top_feature_importances);
+                    const scores = Object.values(p.top_feature_importances);
+
+                    if (featureChart) featureChart.destroy();
+                    featureChart = new Chart(document.getElementById("featureImportanceChart"), {
+                        type: "bar",
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: "Importance Score",
+                                data: scores,
+                                backgroundColor: "#38bdf8",
+                                borderRadius: 4,
+                            }]
+                        },
+                        options: {
+                            indexAxis: "y",
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: { beginAtZero: true, grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
+                                y: { grid: { display: false }, ticks: { color: "#94a3b8" } }
+                            },
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                }
+            }
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+document.getElementById("retrainBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("retrainBtn");
+    btn.disabled = true;
+    btn.innerText = "Training...";
+    try {
+        const res = await fetch("/api/v1/model/train", { method: "POST" });
+        const json = await res.json();
+        if (json.success) {
+            alert("Model retrained successfully!");
+            loadModelMetrics();
+        } else {
+            alert("Training failed: " + json.message);
+        }
+    } catch (e) {
+        alert("Error: " + e);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "🔄 Retrain & Evaluate";
+    }
+});
+
+document.addEventListener("DOMContentLoaded", loadModelMetrics);
+</script>
+{% endblock %}
+
