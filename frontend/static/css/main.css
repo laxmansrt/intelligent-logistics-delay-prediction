@@ -1,26 +1,32 @@
 /*
  * frontend/static/css/main.css
  * =============================
- * Professional Logistics Analytics Dashboard Styling
- * Color Palette: Deep Navy (#0b132b, #1c2541), Slate (#3a506b),
- * Accents: Ice Blue (#5bc0be), Emerald Green (#10b981), Amber (#f59e0b), Crimson (#ef4444)
+ * Professional Blue & White Theme
+ * Project: Big Data Classification and Prediction for Transportation and Logistics using Apache Hive
  */
 
 :root {
-    --bg-main: #0b1120;
-    --bg-card: #151f32;
-    --bg-card-hover: #1c2a44;
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f1f5f9;
     --bg-sidebar: #0f172a;
-    --border-color: #26354f;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
+    --border-color: #e2e8f0;
+    --border-subtle: #cbd5e1;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
     --text-muted: #64748b;
-    --accent-blue: #38bdf8;
-    --accent-indigo: #6366f1;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
+    --brand-blue: #1d4ed8;
+    --brand-blue-light: #eff6ff;
+    --accent-blue: #2563eb;
+    --accent-cyan: #0284c7;
+    --success: #059669;
+    --success-bg: #ecfdf5;
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    --warning: #d97706;
+    --warning-bg: #fffbeb;
     --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
 }
 
 * {
@@ -45,9 +51,9 @@ body {
 }
 
 .sidebar {
-    width: 260px;
+    width: 270px;
     background-color: var(--bg-sidebar);
-    border-right: 1px solid var(--border-color);
+    border-right: 1px solid #1e293b;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -58,23 +64,23 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid #1e293b;
 }
 
 .brand-icon {
-    font-size: 1.75rem;
+    font-size: 1.85rem;
 }
 
 .brand-title {
     font-size: 1.05rem;
     font-weight: 700;
-    color: var(--accent-blue);
+    color: #38bdf8;
     line-height: 1.2;
 }
 
 .brand-sub {
     font-size: 0.72rem;
-    color: var(--text-muted);
+    color: #94a3b8;
     letter-spacing: 0.5px;
     text-transform: uppercase;
 }
@@ -94,7 +100,7 @@ body {
     align-items: center;
     gap: 0.75rem;
     padding: 0.7rem 1rem;
-    color: var(--text-secondary);
+    color: #cbd5e1;
     text-decoration: none;
     font-size: 0.9rem;
     font-weight: 500;
@@ -104,7 +110,8 @@ body {
 
 .nav-link:hover, .nav-link.active {
     background-color: #1e293b;
-    color: var(--accent-blue);
+    color: #38bdf8;
+    font-weight: 600;
 }
 
 .main-content {
@@ -112,26 +119,53 @@ body {
     display: flex;
     flex-direction: column;
     overflow-x: hidden;
+    background-color: var(--bg-main);
 }
 
 .topbar {
     height: 64px;
     border-bottom: 1px solid var(--border-color);
-    background-color: var(--bg-sidebar);
+    background-color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 2rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
 }
 
 .page-title {
     font-size: 1.25rem;
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--text-primary);
 }
 
 .content-body {
     padding: 2rem;
     flex: 1;
+}
+
+/* --- Banner Header --- */
+.project-banner {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    color: #ffffff;
+    padding: 1.25rem 1.75rem;
+    border-radius: 12px;
+    margin-bottom: 1.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.15);
+}
+
+.project-banner-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.project-banner-sub {
+    font-size: 0.82rem;
+    opacity: 0.9;
 }
 
 /* --- KPI Cards Grid --- */
@@ -149,16 +183,17 @@ body {
     padding: 1.25rem 1.5rem;
     display: flex;
     flex-direction: column;
-    transition: transform 0.2s ease;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .kpi-card:hover {
-    background-color: var(--bg-card-hover);
     transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
 }
 
 .kpi-label {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.75px;
     color: var(--text-muted);
@@ -167,7 +202,7 @@ body {
 
 .kpi-value {
     font-size: 1.85rem;
-    font-weight: 700;
+    font-weight: 800;
     margin: 0.4rem 0;
     color: var(--text-primary);
 }
@@ -184,6 +219,7 @@ body {
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.75rem;
+    box-shadow: var(--card-shadow);
 }
 
 .card-header {
@@ -191,11 +227,14 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.75rem;
 }
 
 .card-title {
     font-size: 1.1rem;
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--text-primary);
 }
 
 .grid-2col {
@@ -223,38 +262,44 @@ table {
 }
 
 th {
-    background-color: #1a2538;
+    background-color: #f8fafc;
     color: var(--text-secondary);
-    font-weight: 600;
+    font-weight: 700;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 2px solid var(--border-color);
 }
 
 td {
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid #1a263c;
+    border-bottom: 1px solid var(--border-color);
     color: var(--text-primary);
 }
 
+tr:nth-child(even) td {
+    background-color: #fcfdfe;
+}
+
 tr:hover td {
-    background-color: var(--bg-card-hover);
+    background-color: #f1f5f9;
 }
 
 /* --- Badges & Status Pills --- */
 .badge {
-    display: inline-block;
-    padding: 0.2rem 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.65rem;
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 600;
 }
 
-.badge-success { background-color: rgba(16, 185, 129, 0.2); color: var(--success); }
-.badge-danger  { background-color: rgba(239, 68, 68, 0.2); color: var(--danger); }
-.badge-warning { background-color: rgba(245, 158, 11, 0.2); color: var(--warning); }
-.badge-info    { background-color: rgba(56, 189, 248, 0.2); color: var(--accent-blue); }
+.badge-success { background-color: var(--success-bg); color: var(--success); border: 1px solid rgba(5, 150, 105, 0.2); }
+.badge-danger  { background-color: var(--danger-bg);  color: var(--danger);  border: 1px solid rgba(220, 38, 38, 0.2); }
+.badge-warning { background-color: var(--warning-bg); color: var(--warning); border: 1px solid rgba(217, 119, 6, 0.2); }
+.badge-info    { background-color: var(--brand-blue-light); color: var(--brand-blue); border: 1px solid rgba(29, 78, 216, 0.2); }
 
-/* --- Forms & Buttons --- */
+/* --- Forms & Inputs --- */
 .form-group {
     margin-bottom: 1.25rem;
 }
@@ -262,25 +307,26 @@ tr:hover td {
 label {
     display: block;
     font-size: 0.85rem;
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 0.4rem;
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
 
 input, select, textarea {
     width: 100%;
     padding: 0.65rem 0.9rem;
-    background-color: #0d1627;
-    border: 1px solid var(--border-color);
+    background-color: #ffffff;
+    border: 1px solid var(--border-subtle);
     border-radius: 8px;
     color: var(--text-primary);
     font-size: 0.9rem;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 input:focus, select:focus, textarea:focus {
     border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .btn {
@@ -298,33 +344,32 @@ input:focus, select:focus, textarea:focus {
     text-decoration: none;
 }
 
-.btn-primary { background-color: #2563eb; color: #fff; }
-.btn-primary:hover { background-color: #1d4ed8; }
+.btn-primary { background-color: var(--brand-blue); color: #fff; }
+.btn-primary:hover { background-color: #1e40af; }
 
-.btn-success { background-color: #059669; color: #fff; }
+.btn-success { background-color: var(--success); color: #fff; }
 .btn-success:hover { background-color: #047857; }
 
 .btn-outline {
-    background-color: transparent;
-    border: 1px solid var(--border-color);
+    background-color: #ffffff;
+    border: 1px solid var(--border-subtle);
     color: var(--text-secondary);
 }
 .btn-outline:hover {
-    background-color: #1e293b;
+    background-color: #f1f5f9;
     color: var(--text-primary);
 }
 
-/* --- Job Logs Terminal --- */
+/* --- Code Editor / Terminal --- */
 .terminal {
-    background-color: #050b14;
-    border: 1px solid var(--border-color);
+    background-color: #0f172a;
+    border: 1px solid #1e293b;
     border-radius: 8px;
     padding: 1rem;
     font-family: ui-monospace, Menlo, Monaco, "Courier New", monospace;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     color: #38bdf8;
-    max-height: 280px;
+    max-height: 320px;
     overflow-y: auto;
     white-space: pre-wrap;
 }
-

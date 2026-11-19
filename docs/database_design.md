@@ -1,121 +1,150 @@
-# Database Design & MongoDB Schema Specification
+# Database & Data Warehouse Design Specification
 
-### 1. Database Overview
-The application utilizes **MongoDB**, a distributed document-oriented NoSQL database. MongoDB was selected over traditional relational databases due to:
-- **Flexible Schema-on-Read:** Easily ingests semi-structured telemetry without requiring ALTER TABLE schema migrations.
-- **High-Velocity Document Writes:** Supports high-throughput ingestion of time-series GPS pings and weather observations.
-- **Native Geospatial & Compound Indexing:** Provides fast B-tree and 2dsphere indexing for route and coordinate lookups.
+**Project Title:** Big Data Classification and Prediction for Transportation and Logistics using Apache Hive
 
 ---
 
-### 2. Collection Specifications & Indexes
+### 1. Architectural Role of Storage Components
 
-#### 1. Collection: `shipments`
-Stores canonical freight shipment records.
-```javascript
+The platform employs a dual-database architecture:
+1. **Apache Hive (Primary Big Data Warehouse):** Used for large-scale data warehousing, distributed schema-on-read, dynamic partitioning, high-compression columnar ORC storage, and analytical HiveQL queries.
+2. **MongoDB / Local Store (Application Cache & Registry):** Used by the Flask web application for sub-millisecond point queries, fast search indexing, and real-time frontend pagination.
+
+---
+
+### 2. Apache Hive Data Warehouse Design
+
+Database Name: **`transportation_logistics_db`**
+
+#### 2.1 Staging External Table: `shipments_raw`
+Receives ingested CSV files directly from the data lake storage layer without duplicating file storage.
+
+```sql
+CREATE EXTERNAL TABLE IF NOT EXISTS transportation_logistics_db.shipments_raw (
+    shipment_id          STRING,
+    origin_city          STRING,
+    origin_state         STRING,
+    origin_lat           DOUBLE,
+    origin_lon           DOUBLE,
+    destination_city     STRING,
+    destination_state    STRING,
+    destination_lat      DOUBLE,
+    destination_lon      DOUBLE,
+    distance_km          DOUBLE,
+    transportation_mode  STRING,
+    vehicle_type         STRING,
+    carrier              STRING,
+    weight_kg            DOUBLE,
+    category             STRING,
+    scheduled_pickup     STRING,
+    actual_pickup        STRING,
+    scheduled_delivery   STRING,
+    actual_delivery      STRING,
+    status               STRING,
+    is_delayed           INT,
+    delay_minutes        DOUBLE,
+    delay_reason         STRING,
+    delivery_duration_hours DOUBLE,
+    traffic_condition    STRING,
+    weather_condition    STRING
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/data/raw/shipments'
+TBLPROPERTIES ("skip.header.line.count"="1");
+```
+
+#### 2.2 Managed Columnar Analytical Table: `shipments_orc`
+Engineered for high-performance Big Data queries. Data is stored in **Optimized Row Columnar (ORC)** format with **Snappy compression** and **partitioned dynamically by `transportation_mode`** (`Air`, `Ground`, `Rail`, `Sea`).
+
+```sql
+CREATE TABLE IF NOT EXISTS transportation_logistics_db.shipments_orc (
+    shipment_id             STRING,
+    origin_city             STRING,
+    origin_state            STRING,
+    origin_lat              DOUBLE,
+    origin_lon              DOUBLE,
+    destination_city        STRING,
+    destination_state       STRING,
+    destination_lat         DOUBLE,
+    destination_lon         DOUBLE,
+    distance_km             DOUBLE,
+    vehicle_type            STRING,
+    carrier                 STRING,
+    weight_kg               DOUBLE,
+    category                STRING,
+    scheduled_pickup        TIMESTAMP,
+    actual_pickup           TIMESTAMP,
+    scheduled_delivery      TIMESTAMP,
+    actual_delivery         TIMESTAMP,
+    status                  STRING,
+    is_delayed              INT,
+    delay_minutes           DOUBLE,
+    delay_reason            STRING,
+    delivery_duration_hours DOUBLE,
+    traffic_condition       STRING,
+    weather_condition       STRING
+)
+PARTITIONED BY (transportation_mode STRING)
+STORED AS ORC
+TBLPROPERTIES (
+    "orc.compress"="SNAPPY",
+    "orc.create.index"="true",
+    "orc.stripe.size"="67108864"
+);
+```
+
+**Benefits of Hive ORC Partitioning:**
+- **Partition Pruning:** Queries targeting a specific mode (e.g., `WHERE transportation_mode = 'Air'`) read only the relevant partition directory, bypassing the rest.
+- **Columnar Projection:** Analytical queries aggregating only `is_delayed` or `distance_km` skip reading unreferenced string fields from disk.
+- **Vectorized Execution:** Processes batches of 1,024 rows in CPU cache, achieving 3x-8x speedups over row-oriented text storage.
+
+#### 2.3 Pre-Aggregated Summary Table: `route_delay_summary`
+Maintains pre-computed corridor metrics for rapid reporting.
+
+```sql
+CREATE TABLE IF NOT EXISTS transportation_logistics_db.route_delay_summary (
+    origin_city         STRING,
+    destination_city    STRING,
+    transportation_mode STRING,
+    total_shipments     BIGINT,
+    delayed_shipments   BIGINT,
+    delay_percentage    DOUBLE,
+    avg_delay_minutes   DOUBLE,
+    avg_duration_hours  DOUBLE
+)
+STORED AS ORC;
+```
+
+---
+
+### 3. Application Registry (MongoDB NoSQL Schema)
+
+#### Collection: `shipments`
+```json
 {
-  "_id": ObjectId("..."),
+  "_id": "ObjectId('...')",
   "shipment_id": "SHP-20230601-001",
   "origin_city": "Mumbai",
-  "origin_state": "MH",
-  "origin_lat": 19.076,
-  "origin_lon": 72.877,
   "destination_city": "Delhi",
-  "destination_state": "DL",
-  "destination_lat": 28.613,
-  "destination_lon": 77.209,
-  "distance_km": 1420.5,
+  "transportation_mode": "Ground",
   "vehicle_type": "Truck",
   "carrier": "BlueDart",
+  "distance_km": 1420.5,
   "weight_kg": 350.0,
   "category": "Electronics",
-  "scheduled_pickup": "2023-06-01T08:00:00+00:00",
-  "actual_pickup": "2023-06-01T08:45:00+00:00",
-  "scheduled_delivery": "2023-06-03T18:00:00+00:00",
-  "actual_delivery": "2023-06-04T02:30:00+00:00",
+  "scheduled_delivery": "2023-06-03T18:00:00Z",
+  "actual_delivery": "2023-06-04T02:30:00Z",
   "is_delayed": 1,
   "delay_minutes": 510.0,
   "delay_reason": "Traffic Congestion",
-  "status": "Delivered",
-  "source_file": "sample_shipments.csv",
-  "ingested_at": "2023-06-01T00:00:00+00:00"
+  "status": "Delivered"
 }
 ```
+
 **Indexes:**
 - `{ shipment_id: 1 }` (Unique)
-- `{ origin_city: 1, destination_city: 1 }` (Route Queries)
-- `{ is_delayed: 1 }` (Filtering)
+- `{ origin_city: 1, destination_city: 1 }` (Compound corridor search)
+- `{ is_delayed: 1 }` (Filter On-Time vs Delayed)
 - `{ scheduled_delivery: -1 }` (Timeline sorting)
-
-#### 2. Collection: `traffic_records`
-Stores road segment congestion levels.
-```javascript
-{
-  "_id": ObjectId("..."),
-  "record_id": "TRF-00001",
-  "route_id": "MUM-DEL-NH48",
-  "timestamp": "2023-06-01T08:30:00+00:00",
-  "congestion_level": 4, // 1=Free flow, 5=Gridlock
-  "avg_speed_kmh": 28.5,
-  "incident_flag": 0
-}
-```
-**Indexes:** `{ route_id: 1, timestamp: -1 }`
-
-#### 3. Collection: `weather_records`
-Stores meteorological observations.
-```javascript
-{
-  "_id": ObjectId("..."),
-  "record_id": "WTH-00001",
-  "city": "Mumbai",
-  "timestamp": "2023-06-01T08:00:00+00:00",
-  "condition": "Rain",
-  "temperature_c": 28.5,
-  "wind_speed_kmh": 42.0,
-  "visibility_km": 2.5,
-  "precipitation_mm": 45.0
-}
-```
-**Indexes:** `{ city: 1, timestamp: -1 }`
-
-#### 4. Collection: `prediction_results`
-Logs real-time inference predictions for auditability.
-```javascript
-{
-  "_id": ObjectId("..."),
-  "shipment_id": "ADHOC",
-  "predicted_at": "2026-11-18T08:00:00+00:00",
-  "is_delayed_predicted": 1,
-  "delay_probability": 0.7245,
-  "confidence": 0.7245,
-  "delay_risk": "High",
-  "contributing_factors": [
-    "Long-haul route distance (1420 km) increases transit vulnerability",
-    "Departure scheduled during peak traffic hours (08:00)"
-  ],
-  "input_features": { ... }
-}
-```
-**Indexes:** `{ predicted_at: -1 }`, `{ delay_risk: 1 }`
-
-#### 5. Collection: `processing_jobs`
-Audit trail of distributed job executions.
-```javascript
-{
-  "_id": ObjectId("..."),
-  "job_id": "spark-etl-8a2b3c4d",
-  "job_type": "spark_etl",
-  "status": "completed",
-  "started_at": "2026-11-18T08:00:00+00:00",
-  "completed_at": "2026-11-18T08:00:02+00:00",
-  "details": {
-    "raw_records": 2000,
-    "duplicates_removed": 0,
-    "final_records": 2000,
-    "output_path": "data/processed/shipments_clean/clean_shipments.csv"
-  }
-}
-```
-**Indexes:** `{ job_id: 1 }` (Unique), `{ started_at: -1 }`
-

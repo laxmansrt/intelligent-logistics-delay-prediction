@@ -74,7 +74,7 @@ def main():
         {"_id": "init"},
         {
             "_id": "init",
-            "project": "Intelligent Logistics Delay Prediction — BDT",
+            "project": "Big Data Classification and Prediction for Transportation and Logistics using Apache Hive",
             "initialized_at": datetime.now(timezone.utc).isoformat(),
             "mongo_db": Config.MONGO_DB_NAME,
             "collections": ALL_COLLECTIONS,

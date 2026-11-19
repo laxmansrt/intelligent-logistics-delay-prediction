@@ -1,5 +1,5 @@
 # ============================================================
-# .gitignore — INTELLIGENT LOGISTICS DELAY PREDICTION PROJECT
+# .gitignore — BIG DATA CLASSIFICATION AND PREDICTION FOR TRANSPORTATION AND LOGISTICS USING APACHE HIVE
 # ============================================================
 
 # --- Environment & Secrets ---
@@ -45,6 +45,13 @@ logs/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# --- Big Data Warehousing & Spark ---
+bigdata/hive/warehouse/
+*.crc
+derby.log
+metastore_db/
+spark-warehouse/
 
 # --- Pytest Cache ---
 .pytest_cache/

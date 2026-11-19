@@ -30,10 +30,10 @@ logger = get_logger("run")
 
 
 def main():
-    logger.info("=" * 60)
-    logger.info("  INTELLIGENT LOGISTICS DELAY PREDICTION")
-    logger.info("  Big Data Technologies (BDT) Project")
-    logger.info("=" * 60)
+    logger.info("=" * 75)
+    logger.info("  BIG DATA CLASSIFICATION AND PREDICTION FOR TRANSPORTATION")
+    logger.info("  AND LOGISTICS USING APACHE HIVE")
+    logger.info("=" * 75)
     logger.info("Storage mode : %s", Config.STORAGE_MODE)
     logger.info("Spark mode   : %s (%s)", Config.SPARK_MODE, Config.SPARK_MASTER)
     logger.info("MongoDB      : %s / %s", Config.MONGO_URI, Config.MONGO_DB_NAME)

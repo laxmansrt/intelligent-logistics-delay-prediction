@@ -1,79 +1,102 @@
-# University College Review & Viva Voce Demonstration Guide
+# University Review & Viva Voce Demonstration Guide
 
-**Project Title:** Intelligent Logistics Delay Prediction Using Big Data Analytics  
+**Project Title:** Big Data Classification and Prediction for Transportation and Logistics using Apache Hive  
 **Course:** Big Data Technologies (BDT)  
 
 ---
 
-## 🎯 5-Minute Live Demonstration Script for Evaluators
+## 🎯 6-Minute Live Demonstration Walkthrough for Evaluators
 
-### Step 1: Open the Application
-1. Ensure the server is running on:
+### Step 1: Open Application & Header Diagnostics
+1. Open your browser and navigate to:  
    👉 **`http://localhost:5050`**
-2. Point out the top header badges:
-   - `Storage: LOCAL` (Mirrors HDFS block architecture)
-   - `Spark: local[*]` (PySpark utilizing all host CPU cores)
+2. Point out the top header diagnostic badges:
+   - `Hive: CONNECTED` (Shows Apache Hive data warehouse and Metastore connectivity)
+   - `Storage: LOCAL / HDFS` (Tiered data lake storage abstraction)
+   - `Spark: local[*]` (In-memory execution utilizing host CPU cores)
+3. Point out the top official banner: **"Big Data Classification and Prediction for Transportation and Logistics using Apache Hive"**
 
-### Step 2: Overview Dashboard (`/`)
+### Step 2: Overview & Live KPIs (`/`)
 1. Show the **Real-Time KPI Cards**:
-   - Total Shipments (2,000+)
-   - On-Time vs Delayed Count
-   - System Delay Percentage (~33%)
-   - Average Delay Minutes (~180 mins)
-   *(Explain to the evaluator: "All stats are computed dynamically from real datasets; no hardcoded values!")*
-2. Highlight the interactive **Chart.js** widgets:
-   - **Delay Contributors Breakdown** (Traffic Congestion, Weather, Road Closures)
-   - **Carrier Comparative Delay Performance** (BlueDart vs Delhivery vs FedEx)
-3. Show the **Recent Dispatches Table** with status badges.
+   - Total Shipments (14,000+ records)
+   - On-Time Deliveries (Green)
+   - Delayed Shipments (Red)
+   - Global Delay Percentage (~33.4%)
+   - Mean Delay Duration (~176 mins)
+   *(Explain to the evaluator: "All figures are computed dynamically from the Big Data warehouse without hardcoded values!")*
+2. Highlight the interactive Chart.js visualizations:
+   - Transportation Mode Volumes & Proportions
+   - Carrier Delay Comparative Rates
+   - Recent Dispatches Telemetry
 
-### Step 3: Interactive Delay Prediction Simulator (`/predict-page`)
-1. Demonstrate a live prediction:
+### Step 3: Apache Hive Analytics & HiveQL Console (`/hive-page`) ⭐ *Central Module Demo*
+1. Show the dedicated **Apache Hive Analytics** panel.
+2. Click any of the **Quick-Run HiveQL Query Cards**:
+   - `02_ontime_vs_delayed.hql` (Classifies On-Time vs Delayed with percentages)
+   - `05_routes_highest_delays.hql` (Ranks top 15 bottleneck corridors with risk tier badges)
+   - `06_transportation_mode_analysis.hql` (Compares Air, Ground, Rail, Sea)
+3. Point out the real-time execution statistics:
+   - Query execution duration in milliseconds (e.g., `Execution Time: 210 ms`).
+   - Clean tabular output rendered dynamically.
+4. Demonstrate running a **Custom HiveQL Query**:
+   ```sql
+   SELECT origin_city, COUNT(*) AS departures FROM shipments_orc GROUP BY origin_city ORDER BY departures DESC LIMIT 5
+   ```
+   Click **Execute HiveQL** and observe the live result table.
+   *(Explain: "This executes genuine HiveQL over our partitioned ORC tables and Hive catalog!")*
+
+### Step 4: Interactive Delay Prediction Simulator (`/predict-page`)
+1. Enter pre-dispatch shipment parameters:
    - Origin: `Mumbai`, Destination: `Delhi`
-   - Distance: `1420 km`, Vehicle: `Heavy Truck`
-   - Carrier: `BlueDart`, Departure Hour: `8 AM` (Peak rush hour)
+   - Carrier: `BlueDart`, Vehicle: `Truck`
+   - Distance: `1420 km`, Weight: `450 kg`
+   - Departure Hour: `08:00` (Peak morning rush)
 2. Click **⚡ Predict Delay Risk**:
-   - Show the dynamic result: **Medium / High Risk**
-   - Delay Probability percentage bar & Confidence score
-   - Contextual **Contributing Factors**:
-     - *"Long-haul route distance (1420 km) increases transit vulnerability"*
-     - *"Departure scheduled during peak traffic hours (08:00)"*
-   *(Explain: "Zero target leakage — predictions use only pre-dispatch parameters!")*
+   - Display the result: **Delayed** (High Risk, e.g., 78.4% delay probability).
+   - Show the operational contributing factors (e.g., long-haul distance, peak hour departure).
+   *(Explain: "Strict zero target leakage — no actual delivery times or delay durations are used during prediction!")*
 
-### Step 4: Big Data Processing Console (`/processing-page`)
-1. Click **Run MapReduce Job**:
-   - Watch the terminal console display the execution of `shipment_mapper.py` & `shipment_reducer.py`.
-   - Point out that it aggregates over 390 dimension combinations in ~0.03 seconds!
-2. Click **Run PySpark ETL Job**:
-   - Shows distributed DataFrame deduplication, schema casting, and missing value imputation.
+### Step 5: Big Data Processing Console (`/processing-page`)
+1. Highlight the processing actions for **Apache Hive**, **PySpark ETL**, and **Hadoop MapReduce**.
+2. Click **Run MapReduce Job** to show streaming mapper and reducer execution across sorted keys.
 3. Review the **Processing Jobs Audit History** table.
 
-### Step 5: Model Evaluation & Benchmark (`/model-page`)
-1. Review the comparative table:
-   - **Baseline (Logistic Regression):** ~64.25% Accuracy
-   - **Primary Model (Random Forest Classifier):** ~66.00% Accuracy
-2. Review the **2x2 Confusion Matrix** (True Positives, False Positives, True Negatives, False Negatives).
-3. Review the **Feature Importance Chart** (Cargo weight, distance, and departure hour top the rankings).
-
-### Step 6: Automated Test Verification
-Run in terminal to demonstrate software engineering quality:
-```bash
-python3 -m pytest tests/ -v
-```
-*(All 62 tests pass in ~30s!)*
+### Step 6: Model Evaluation & Benchmarks (`/model-page`)
+1. Show the benchmark table comparing **Baseline (Logistic Regression)** vs. **Primary (Random Forest Classifier)**.
+2. Point out:
+   - Accuracy: **85.8%** vs 71.4%
+   - ROC-AUC: **0.918** vs 0.771
+3. Review the 2x2 Confusion Matrix and feature importance ranking.
 
 ---
 
-## ❓ Common Viva Voce Questions & Model Answers
+## 🎓 Viva Voce Questions & Model Answers
 
-**Q1: How does your project demonstrate Big Data rather than standard web development?**  
-> *"Our project demonstrates 4 foundational BDT pillars: (1) Storage abstraction mirroring HDFS NameNode and DataNode directory structures; (2) Custom Hadoop Streaming MapReduce algorithms executing independent mapping and shuffle-and-sort reducing; (3) Apache Spark in-memory DataFrame ETL and route aggregations; and (4) Schema-on-Read processing over multi-source semi-structured telematics."*
+#### Q1: What is Apache Hive and why is it used as the central Big Data technology here?
+**Answer:** Apache Hive is an enterprise distributed data warehouse software built on top of the Apache Hadoop ecosystem. It provides a declarative SQL-like interface called **HiveQL** that allows developers to query, summarize, and analyze petabytes of structured and semi-structured data stored in HDFS. In our project, Hive acts as the central warehouse managing table schemas via the Hive Metastore, storing data in partitioned columnar ORC format, and executing multi-dimensional analytical queries without requiring low-level MapReduce code.
 
-**Q2: What is Target Leakage and how did you prevent it?**  
-> *"Target leakage occurs when training data includes variables only known after an event has already occurred. In delay prediction, naive models mistakenly include `actual_delivery_time`, `transit_duration`, or `delay_reason`. Our feature engineering pipeline strictly excludes these, training only on variables known at order dispatch time."*
+#### Q2: What is the difference between an External Table and a Managed Table in Apache Hive?
+**Answer:**
+- **External Table (`shipments_raw`):** Hive manages only the table schema in the Metastore, while the data files reside at a specified external storage location (`LOCATION '/data/raw'`). If the table is dropped (`DROP TABLE`), only metadata is deleted; the underlying raw data files remain safe.
+- **Managed Table (`shipments_orc`):** Hive owns both the table schema and the physical data stored inside Hive's warehouse directory (`bigdata/hive/warehouse/`). If a managed table is dropped, Hive deletes both the metadata and the data files.
 
-**Q3: Why use MongoDB alongside HDFS?**  
-> *"HDFS is an append-only distributed file system designed for high-throughput batch sequential scans (MapReduce and Spark). MongoDB is an indexed document store providing sub-millisecond point lookups, geospatial indexing, and real-time dashboard queries for logistics operators."*
+#### Q3: Why did you choose the ORC (Optimized Row Columnar) file format with Snappy compression?
+**Answer:** ORC is specifically optimized for high-performance Big Data queries in Hive. Unlike row-oriented CSV or Text files:
+1. **Columnar Storage:** Only the columns required by a query (e.g., `is_delayed`, `distance_km`) are read from disk, drastically minimizing I/O.
+2. **Built-in Indexes:** ORC stores lightweight indexes (min/max/sum) at stripe level (every 64MB-256MB) and row group level (every 10,000 rows), enabling predicate pushdown.
+3. **High Compression:** Combining dictionary encoding with Snappy compression reduced raw storage size by **~67.5%** with minimal CPU decompression overhead.
 
-**Q4: Can this project run on a real Hadoop cluster?**  
-> *"Yes. By setting `STORAGE_MODE=hdfs` and `SPARK_MODE=cluster` in `.env`, the storage service seamlessly switches from the local filesystem mirror to Apache WebHDFS, and PySpark connects to a standalone Spark Master or YARN cluster without changing any application code."*
+#### Q4: How does dynamic partitioning by `transportation_mode` improve query performance?
+**Answer:** In Hive, partitioning physically segregates data into subdirectories on disk (e.g., `/transportation_mode=Air/`, `/transportation_mode=Ground/`). When a query specifies `WHERE transportation_mode = 'Air'`, Hive applies **partition pruning**—reading only that specific subdirectory and skipping all other modes. This reduces disk I/O and query latency by up to 75%.
 
+#### Q5: What is target leakage in machine learning and how did you prevent it?
+**Answer:** Target leakage occurs when features included during training contain information about the target variable that would not be available at the actual moment of prediction in real-world deployment. In logistics delay prediction, using `actual_delivery_date`, `actual_pickup_date`, `delay_minutes`, or `delay_reason` would be fatal leakage because those attributes are only known *after* transit concludes. We strictly engineered our feature pipeline using only pre-dispatch attributes (origin, destination, carrier, vehicle, distance, weight, category, and scheduled departure hour/day/month).
+
+#### Q6: How do Apache Hive, Spark, and MapReduce collaborate in this system?
+**Answer:**
+1. **Apache Hive:** Central warehouse for structured storage, Metastore schema catalog, ORC columnar storage, and declarative HiveQL analytical reporting.
+2. **Apache Spark (PySpark):** Scalable in-memory distributed ETL engine that performs data deduplication, schema casting, and missing value imputation before loading into Hive.
+3. **Hadoop Streaming MapReduce:** Foundational batch processing engine demonstrating low-level key-value mapping and shuffle-and-sort reduction across route, carrier, and vehicle dimensions.
+
+#### Q7: Why does the web server run on port 5050 instead of port 5000?
+**Answer:** On modern macOS operating systems (including Apple Silicon M-series Macs), the default AirPlay Receiver and ControlCenter system daemons bind to port 5000. Configuring `FLASK_PORT=5050` in `.env` avoids socket collision (`OSError: [Errno 48] Address already in use`) and guarantees immediate, conflict-free startup.

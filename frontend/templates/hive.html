@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block page_title %}Apache Hive Big Data Warehouse & HiveQL Analytics{% endblock %}
+
+{% block content %}
+<!-- Project Official Banner -->
+<div class="project-banner">
+    <div>
+        <div class="project-banner-title">Apache Hive Big Data Management & Analytics</div>
+        <div class="project-banner-sub">
+            Querying partitioned columnar ORC tables in <code>transportation_logistics_db</code> via HiveQL
+        </div>
+    </div>
+    <div>
+        <button class="btn btn-outline" id="initHiveBtn" style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.4);">
+            ⚙️ Initialize Hive Warehouse
+        </button>
+    </div>
+</div>
+
+<!-- 7 Official Queries Quick-Run Cards -->
+<div class="card-panel">
+    <div class="card-header">
+        <h2 class="card-title">Official HiveQL Transportation & Logistics Queries</h2>
+        <span class="badge badge-info">7 Pre-Compiled HiveQL Scripts</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem;">
+        <button class="btn btn-outline query-btn" data-query="total_shipments" style="text-align: left; justify-content: flex-start;">
+            📊 1. Total Shipments Volume
+        </button>
+        <button class="btn btn-outline query-btn" data-query="ontime_vs_delayed" style="text-align: left; justify-content: flex-start;">
+            ⏱️ 2. On-Time vs. Delayed
+        </button>
+        <button class="btn btn-outline query-btn" data-query="delay_percentage" style="text-align: left; justify-content: flex-start;">
+            📈 3. Delay % & Duration
+        </button>
+        <button class="btn btn-outline query-btn" data-query="avg_delivery_duration" style="text-align: left; justify-content: flex-start;">
+            🚚 4. Avg Delivery Duration
+        </button>
+        <button class="btn btn-outline query-btn" data-query="routes_highest_delays" style="text-align: left; justify-content: flex-start;">
+            🛣️ 5. Bottleneck Routes
+        </button>
+        <button class="btn btn-outline query-btn" data-query="transportation_mode_analysis" style="text-align: left; justify-content: flex-start;">
+            ✈️ 6. Transport Mode Patterns
+        </button>
+        <button class="btn btn-outline query-btn" data-query="monthly_shipment_trends" style="text-align: left; justify-content: flex-start;">
+            📅 7. Monthly Delivery Trends
+        </button>
+    </div>
+</div>
+
+<!-- Interactive HiveQL Console & Results -->
+<div class="card-panel">
+    <div class="card-header">
+        <h2 class="card-title">Interactive HiveQL Query Console</h2>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span id="queryTimer" style="font-size: 0.8rem; color: var(--text-muted);">Execution time: --</span>
+            <button class="btn btn-primary" id="runCustomHqlBtn" style="font-size: 0.85rem;">▶ Execute HiveQL</button>
+        </div>
+    </div>
+    <div class="form-group" style="margin-bottom: 1rem;">
+        <textarea id="hqlInput" rows="4" style="font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85rem;" placeholder="SELECT transportation_mode, COUNT(*) FROM shipments_orc GROUP BY transportation_mode;">SELECT * FROM shipments_orc LIMIT 10;</textarea>
+    </div>
+
+    <!-- Results Table Container -->
+    <div class="table-container" style="border: 1px solid var(--border-color); border-radius: 8px;">
+        <table id="hiveResultsTable">
+            <thead id="hiveThead">
+                <tr><th>Status</th></tr>
+            </thead>
+            <tbody id="hiveTbody">
+                <tr><td style="color: var(--text-muted); text-align: center; padding: 2rem;">Select a query above or enter HiveQL to execute.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Hive Warehouse Architecture Information -->
+<div class="grid-2col">
+    <div class="card-panel">
+        <div class="card-header">
+            <h2 class="card-title">Apache Hive Warehouse Topology</h2>
+        </div>
+        <table style="font-size: 0.82rem;">
+            <tbody>
+                <tr>
+                    <td><strong>Hive Database</strong></td>
+                    <td><code>transportation_logistics_db</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Storage Format</strong></td>
+                    <td>Optimized Row Columnar (ORC) with Snappy Compression</td>
+                </tr>
+                <tr>
+                    <td><strong>Partitioning Scheme</strong></td>
+                    <td>Dynamic Partitioning by <code>transportation_mode</code> (Truck, Van, Rail, Air Cargo)</td>
+                </tr>
+                <tr>
+                    <td><strong>Metastore Catalog</strong></td>
+                    <td>Apache Hive Metastore (ACID Transactions & Predicate Pushdown)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card-panel">
+        <div class="card-header">
+            <h2 class="card-title">Docker Environment (Apple Silicon M4)</h2>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 0.75rem;">
+            To spin up the external standalone HiveServer2 & PostgreSQL metastore on macOS:
+        </p>
+        <div class="terminal" style="max-height: 140px; font-size: 0.75rem;">
+docker compose -f docker-compose.hive.yml up -d
+# Pinned to 3GB RAM allocation; native Apple Silicon ARM64 support
+beeline -u jdbc:hive2://localhost:10000/transportation_logistics_db
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function executeQuery(hql) {
+    const timer = document.getElementById("queryTimer");
+    const thead = document.getElementById("hiveThead");
+    const tbody = document.getElementById("hiveTbody");
+    timer.innerText = "Executing HiveQL...";
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 2rem; color: var(--text-muted);">Executing query across Hive warehouse...</td></tr>`;
+
+    try {
+        const res = await fetch("/api/v1/hive/query", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: hql })
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+            timer.innerText = `Execution time: ${json.data.duration_seconds}s (${json.data.row_count} rows returned)`;
+            const cols = json.data.columns;
+            const rows = json.data.rows;
+
+            thead.innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr>`;
+            if (rows.length > 0) {
+                tbody.innerHTML = rows.map(r => `<tr>${r.map(v => `<td>${v !== null ? v : '<span style="color:#94a3b8">NULL</span>'}</td>`).join("")}</tr>`).join("");
+            } else {
+                tbody.innerHTML = `<tr><td colspan="${cols.length}" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Query executed successfully with 0 rows returned.</td></tr>`;
+            }
+        } else {
+            timer.innerText = "Query Failed";
+            thead.innerHTML = `<tr><th>Error</th></tr>`;
+            tbody.innerHTML = `<tr><td style="color: var(--danger); padding: 1.5rem;">${json.error || json.message}</td></tr>`;
+        }
+    } catch (err) {
+        timer.innerText = "Network Error";
+        tbody.innerHTML = `<tr><td style="color: var(--danger); padding: 1.5rem;">Error: ${err}</td></tr>`;
+    }
+}
+
+// Named Query Buttons
+document.querySelectorAll(".query-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+        const qName = btn.getAttribute("data-query");
+        try {
+            const res = await fetch(`/api/v1/hive/query/${qName}`);
+            const json = await res.json();
+            if (json.success && json.data) {
+                document.getElementById("hqlInput").value = json.data.query;
+                document.getElementById("queryTimer").innerText = `Execution time: ${json.data.duration_seconds}s (${json.data.row_count} rows)`;
+                const cols = json.data.columns;
+                const rows = json.data.rows;
+
+                document.getElementById("hiveThead").innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr>`;
+                document.getElementById("hiveTbody").innerHTML = rows.map(r => `<tr>${r.map(v => `<td>${v !== null ? v : '<span style="color:#94a3b8">NULL</span>'}</td>`).join("")}</tr>`).join("");
+            } else {
+                alert("Query failed: " + (json.message || json.error));
+            }
+        } catch (e) {
+            alert("Error: " + e);
+        }
+    });
+});
+
+// Custom query submit
+document.getElementById("runCustomHqlBtn").addEventListener("click", () => {
+    const hql = document.getElementById("hqlInput").value.trim();
+    if (hql) executeQuery(hql);
+});
+
+// Init Hive Warehouse
+document.getElementById("initHiveBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("initHiveBtn");
+    btn.disabled = true;
+    btn.innerText = "Initializing...";
+    try {
+        const res = await fetch("/api/v1/hive/init", { method: "POST" });
+        const json = await res.json();
+        if (json.success) {
+            alert(`✓ Apache Hive warehouse initialized successfully!\nLoaded ${json.data.records_loaded} records into ${json.data.database}.${json.data.table}`);
+        } else {
+            alert("Initialization failed: " + json.message);
+        }
+    } catch (e) {
+        alert("Error: " + e);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "⚙️ Initialize Hive Warehouse";
+    }
+});
+</script>
+{% endblock %}

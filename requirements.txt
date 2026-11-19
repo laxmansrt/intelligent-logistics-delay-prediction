@@ -1,5 +1,5 @@
 # ============================================================
-# INTELLIGENT LOGISTICS DELAY PREDICTION - BDT PROJECT
+# BIG DATA CLASSIFICATION AND PREDICTION FOR TRANSPORTATION AND LOGISTICS USING APACHE HIVE
 # Python Dependencies
 # ============================================================
 # Install with: pip install -r requirements.txt

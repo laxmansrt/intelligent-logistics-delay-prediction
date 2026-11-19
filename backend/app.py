@@ -95,6 +95,11 @@ def create_app() -> Flask:
         from flask import render_template
         return render_template("model.html")
 
+    @app.route("/hive-page")
+    def hive_page():
+        from flask import render_template
+        return render_template("hive.html")
+
     @app.route("/upload-page")
     def upload_page():
         from flask import render_template

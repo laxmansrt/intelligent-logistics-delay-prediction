@@ -1,18 +1,18 @@
 {
-  "trained_at": "2026-11-18T08:21:56.800893+00:00",
+  "trained_at": "2026-11-19T04:22:38.456243+00:00",
   "dataset_size": 2000,
   "train_size": 1600,
   "test_size": 400,
   "baseline_model": {
     "model_name": "LogisticRegression (Baseline)",
-    "accuracy": 0.6425,
-    "precision": 0.3333,
+    "accuracy": 0.665,
+    "precision": 0.4583,
     "recall": 0.0833,
-    "f1_score": 0.1333,
+    "f1_score": 0.141,
     "confusion_matrix": [
       [
-        246,
-        22
+        255,
+        13
       ],
       [
         121,
@@ -23,31 +23,31 @@
   "primary_model": {
     "model_name": "RandomForestClassifier",
     "version": "rf_v1.0",
-    "accuracy": 0.66,
-    "precision": 0.1667,
-    "recall": 0.0076,
-    "f1_score": 0.0145,
+    "accuracy": 0.6675,
+    "precision": 0.4286,
+    "recall": 0.0227,
+    "f1_score": 0.0432,
     "confusion_matrix": [
       [
-        263,
-        5
+        264,
+        4
       ],
       [
-        131,
-        1
+        129,
+        3
       ]
     ],
     "top_feature_importances": {
-      "weight_kg": 0.1078,
-      "distance_km": 0.1003,
-      "scheduled_hour": 0.0787,
-      "scheduled_month": 0.0717,
-      "scheduled_day_of_week": 0.0548,
-      "carrier_BlueDart": 0.0173,
-      "vehicle_type_Mini-Truck": 0.0163,
-      "vehicle_type_Van": 0.0152,
-      "vehicle_type_Rail": 0.0144,
-      "vehicle_type_Truck": 0.0143
+      "weight_kg": 0.1079,
+      "distance_km": 0.1033,
+      "scheduled_hour": 0.0841,
+      "scheduled_month": 0.0708,
+      "scheduled_day_of_week": 0.0597,
+      "vehicle_type_Air Cargo": 0.0148,
+      "carrier_FedEx India": 0.0147,
+      "vehicle_type_Truck": 0.0142,
+      "vehicle_type_Mini-Truck": 0.0135,
+      "category_Automotive Parts": 0.0135
     },
     "hyperparameters": {
       "n_estimators": 100,

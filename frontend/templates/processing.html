@@ -4,14 +4,23 @@
 
 {% block content %}
 <!-- Processing Action Cards -->
-<div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+<div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+    <div class="card-panel" style="margin-bottom: 0;">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🐝</div>
+        <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 0.4rem;">Apache Hive Warehouse & Analytics</h3>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Executes HiveQL analytical queries over managed ORC tables and Metastore for delay classification.
+        </p>
+        <a href="/hive-page" class="btn btn-primary" style="width: 100%; display: block; text-align: center; text-decoration: none;">Launch Hive Analytics Console</a>
+    </div>
+
     <div class="card-panel" style="margin-bottom: 0;">
         <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⚡</div>
         <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 0.4rem;">PySpark Data Cleaning & ETL</h3>
         <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
             Executes distributed DataFrame deduplication, type casting, missing value imputation, and partitioning.
         </p>
-        <button class="btn btn-primary" id="runSparkEtlBtn" style="width: 100%;">Run PySpark ETL Job</button>
+        <button class="btn btn-outline" id="runSparkEtlBtn" style="width: 100%;">Run PySpark ETL Job</button>
     </div>
 
     <div class="card-panel" style="margin-bottom: 0;">

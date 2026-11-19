@@ -1,18 +1,27 @@
-# Future Enhancements & Scalability Roadmap
+# Future Enhancements & Technological Roadmap
 
-### 1. Real-Time Streaming Ingestion with Apache Kafka & Spark Structured Streaming
-The current system operates on micro-batch and scheduled file ingestion. A natural evolution involves integrating **Apache Kafka** to ingest real-time GPS pings directly from moving freight vehicles (at rates exceeding 50,000 events/second). **Spark Structured Streaming** can process these streams window-by-window to compute dynamic delay alerts while vehicles are en route.
+**Project Title:** Big Data Classification and Prediction for Transportation and Logistics using Apache Hive
 
-### 2. Deep Learning for Multi-Modal Spatio-Temporal Modeling
-While Random Forest provides exceptional interpretability on tabular features, future iterations can introduce:
-- **Graph Neural Networks (GNNs):** To model national highway road networks as topological graphs where nodes represent cities/warehouses and edges represent highway segments with dynamic congestion weights.
-- **Long Short-Term Memory (LSTM) Networks:** To model sequential GPS breadcrumbs and predict arrival time distributions with continuous confidence intervals.
+---
 
-### 3. Automated Dynamic Route Optimization (OR-Tools)
-Integrating Google OR-Tools or Open Source Routing Machine (OSRM) to dynamically calculate optimal alternative route waypoints when the delay risk for a primary route exceeds 65%.
+### 1. Architectural & Big Data Enhancements
 
-### 4. Enterprise Cloud Deployment Architecture (AWS / GCP / Azure)
-- Deploying the HDFS tier to **Amazon S3 / Google Cloud Storage** via S3A connector.
-- Running PySpark pipelines on managed clusters (**Amazon EMR / Databricks / Google Cloud Dataproc**).
-- Hosting the web interface in Docker containers on **Kubernetes (EKS / GKE)** with auto-scaling ingress controllers.
+1. **Apache Hive LLAP (Low Latency Analytical Processing):**
+   - Upgrade Hive execution to Hive LLAP daemons, combining persistent in-memory caching and multi-threaded processing to reduce HiveQL query latencies to sub-second response times.
+2. **Open Table Formats (Apache Iceberg / Delta Lake on Hive):**
+   - Migrate managed tables to Apache Iceberg or Delta Lake integrated with the Hive Metastore to enable ACID transactions, schema evolution, and time-travel querying across shipment state transitions.
+3. **Real-Time Streaming Ingestion (Apache Kafka + Spark Structured Streaming):**
+   - Deploy an Apache Kafka cluster to ingest live GPS pings and telematics events in real time, micro-batching records directly into Hive managed partitions via Spark Structured Streaming.
+4. **Autonomous Cloud Elasticity (Kubernetes & EMR/Dataproc):**
+   - Package the Apache Hive and Spark cluster using Kubernetes operators (Hive on K8s) or cloud-native managed clusters (Google Cloud Dataproc, AWS EMR) with auto-scaling worker nodes.
 
+---
+
+### 2. Machine Learning & Predictive Analytics Upgrades
+
+1. **Deep Temporal Sequence Modeling (LSTM / Transformers):**
+   - Incorporate recurrent neural networks (Long Short-Term Memory) and Temporal Fusion Transformers to capture fine-grained sequential route histories and compound temporal delay delays.
+2. **Dynamic Turn-by-Turn GPS Map Routing:**
+   - Integrate open-source routing engines (OSRM / OpenStreetMap) to calculate real-time road curvature, elevation changes, and construction detours rather than planar geodesic distances.
+3. **Automated Dispatch Remediation & Route Rerouting:**
+   - Develop an automated recommendation engine that not only predicts delay risk, but also suggests alternative carriers, off-peak departure slots, or multi-modal transfers (e.g., diverting Ground freight to Rail) to mitigate identified risks.

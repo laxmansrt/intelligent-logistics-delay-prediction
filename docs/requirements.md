@@ -1,51 +1,56 @@
-# Software & Hardware Requirements
+# System Requirements Specification
+
+**Project Title:** Big Data Classification and Prediction for Transportation and Logistics using Apache Hive
+
+---
 
 ### 1. Hardware Requirements
 
-#### Minimum Development Machine (Student Local Mode)
-- **Processor:** Dual-Core 64-bit CPU (x86_64 or Apple Silicon ARM64, e.g. M1/M2/M3)
-- **RAM:** 4 GB Minimum (8 GB recommended for simultaneous Spark and browser execution)
-- **Disk Space:** 2 GB free disk space for Python virtual environment, dependencies, sample datasets, and model binaries
-- **Network:** Standard internet access for initial dependency installations
+The platform is engineered to operate efficiently on standard student development workstations without necessitating expensive cloud infrastructure:
 
-#### Optional Enterprise Cluster Environment (Multi-Node BDT Deployment)
-- **Master Node:** 4-8 CPU Cores, 16 GB RAM (runs Hadoop NameNode, YARN ResourceManager, Spark Master)
-- **Worker Nodes (x3):** 4-8 CPU Cores, 16 GB RAM each (run HDFS DataNodes, YARN NodeManagers, Spark Workers)
-- **Network Fabric:** 1 Gbps / 10 Gbps Ethernet
+| Component | Minimum Specification | Recommended Specification (Target Dev Machine) |
+|---|---|---|
+| **Processor** | Dual-Core 64-bit x86 or ARM CPU (2.0 GHz+) | **Apple M-Series (Apple Silicon M1/M2/M3/M4) or Intel/AMD 8-Core CPU** |
+| **Random Access Memory (RAM)**| 8 GB Unified / System RAM | **16 GB Unified Memory (Development Machine: MacBook Air M4)** |
+| **Disk Storage** | 10 GB free solid-state storage (SSD) | **25 GB SSD Free Storage** |
+| **Operating System** | macOS 12+, Ubuntu 20.04+ LTS, or Windows 11 (WSL2) | **macOS Sonoma / Sequoia (Darwin ARM64)** |
+| **Display Resolution** | 1366 x 768 pixels | **1920 x 1080 (FHD) or Retina Display** |
 
 ---
 
 ### 2. Software Requirements
 
-#### Operating System Compatibility
-- **macOS:** macOS Monterey (12.0) through macOS Sonoma / Sequoia (fully supported and verified)
-- **Linux:** Ubuntu 20.04+, Debian 11+, RHEL/CentOS 8+
-- **Windows:** Windows 10/11 with WSL2 (Windows Subsystem for Linux) or standard Python 3.11+
+#### 2.1 Core Runtime & Programming Languages
+- **Python:** 3.10 to 3.14 (Verified on Python 3.14.3)
+- **Java Virtual Machine (JVM):** OpenJDK 11, 17, or 21 (Verified on Java 26 / OpenJDK on macOS)
+- **Shell / Terminal:** Zsh or Bash
 
-#### Runtimes & Compilers
-- **Python:** Python 3.10, 3.11, 3.12, or 3.14 (Verified working on Python 3.14.3)
-- **Java:** Java Runtime Environment (JRE) / JDK 11 or higher (OpenJDK 11+ required for Apache Spark)
+#### 2.2 Big Data & Warehousing Technologies
+- **Apache Hive:** Hive 4.0.0 / Embedded Hive Metastore & Catalog via `enableHiveSupport()`
+- **Query Language:** Declarative **HiveQL** (DDL, DML, and Analytical Queries)
+- **File & Serialization Formats:** Optimized Row Columnar (**ORC**) with Snappy compression, CSV (OpenCSV SerDe)
+- **Apache Spark / PySpark:** PySpark 3.5+ / 4.0+ with local master (`local[*]`)
+- **Apache Hadoop:** Hadoop Streaming 3.x (MapReduce compatible streaming runner)
+- **Docker & Docker Compose:** Docker Engine 24+ / Docker Desktop (ARM64 Apple Silicon compatible)
 
-#### Database
-- **MongoDB:** MongoDB Community Server 6.x or 7.x (Optional — local fallback supported if offline)
+#### 2.3 Machine Learning & Data Science Libraries
+- **Scikit-learn:** 1.3+ to 1.9+ (Random Forest Classifier, Logistic Regression, Pipeline, ColumnTransformer, Metrics)
+- **Pandas:** 2.0+ (DataFrame manipulation and schema normalization)
+- **NumPy:** 1.24+ (Vectorized mathematical operations)
+- **Joblib:** 1.3+ (Model persistence and serialization)
 
-#### Core Python Packages & Libraries
-```text
-flask==3.0.3          # Web framework & REST API
-flask-cors==4.0.0     # Cross-Origin Resource Sharing
-pymongo==4.7.2        # MongoDB official driver
-pandas==2.2.2         # Data wrangling & tabular operations
-numpy>=1.24.1         # Vectorized array computations
-pyspark>=3.5.0        # Distributed in-memory data processing
-scikit-learn>=1.5.0   # Machine learning modeling & metrics
-joblib>=1.4.0         # Model serialization & pipeline persistence
-python-dotenv==1.0.1  # 12-factor environment configuration
-pytest>=8.0.0         # Unit, API, and pipeline test suite
-```
+#### 2.4 Web Backend & Frontend
+- **Backend Framework:** Flask 3.0+ (Application factory, modular Blueprints)
+- **Cross-Origin Resource Sharing:** Flask-CORS 4.0+
+- **Frontend Stack:** HTML5, CSS3 (Modern Blue & White logistics theme), Vanilla JavaScript ES6+
+- **Data Visualization:** Chart.js 4.4+ (Doughnut, Bar, Line charts loaded via CDN)
+- **Database (NoSQL):** MongoDB Community Edition 6.0+ (or local JSON fallback mode)
 
-#### Frontend Web Technologies
-- **HTML5:** Semantic document markup
-- **CSS3:** Custom responsive layout, CSS variables, dark-navy theme
-- **JavaScript (ES6+):** Asynchronous `fetch` calls, dynamic DOM manipulation
-- **Chart.js (v4.x):** Responsive HTML5 Canvas data visualizations
+---
 
+### 3. Apple Silicon (M4, 16GB) Configuration & Tuning
+To guarantee smooth execution on macOS Apple Silicon:
+- **PySpark Memory Allocation:** Spark driver memory set to `2g` (`spark.driver.memory=2g`) to avoid memory pressure.
+- **Random Forest Concurrency:** `n_jobs=1` to prevent fork lock contention under Python multiprocessing on macOS.
+- **Port Assignment:** Default web server port configured to **5050** (`FLASK_PORT=5050`) to avoid conflicts with macOS ControlCenter / AirPlay Receiver on port 5000.
+- **Docker Compose Memory Limit:** Standalone Apache Hive 4.0 container capped at `3g` memory limit in `docker-compose.hive.yml`.

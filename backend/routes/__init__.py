@@ -16,6 +16,7 @@ from backend.routes.predict import predict_bp
 from backend.routes.shipments import shipments_bp
 from backend.routes.analytics import analytics_bp
 from backend.routes.jobs import jobs_bp
+from backend.routes.hive import hive_bp
 
 # List all blueprints and their URL prefixes
 BLUEPRINTS = [
@@ -25,6 +26,7 @@ BLUEPRINTS = [
     (shipments_bp, "/api/v1"),
     (analytics_bp, "/api/v1"),
     (jobs_bp, "/api/v1"),
+    (hive_bp, "/api/v1"),
 ]
 
 

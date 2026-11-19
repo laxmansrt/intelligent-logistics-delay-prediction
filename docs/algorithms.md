@@ -1,6 +1,37 @@
 # Algorithms & Big Data Computation Mechanics
 
-### 1. MapReduce Streaming Aggregation Algorithm
+**Project Title:** Big Data Classification and Prediction for Transportation and Logistics using Apache Hive
+
+---
+
+### 1. Apache Hive & HiveQL Distributed Query Execution Mechanics
+
+Apache Hive serves as the **central Big Data technology** for data warehousing and analytics. When a declarative HiveQL query is executed, the Hive system processes it through a multi-stage compilation and execution pipeline:
+
+```
+HiveQL Query String
+        ↓
+  [1. Parser]          --> Validates SQL syntax and builds Abstract Syntax Tree (AST)
+        ↓
+  [2. Semantic Analyzer] --> Resolves table/column names against Hive Metastore
+        ↓
+  [3. Logical Plan & Optimizer] --> Applies Predicate Pushdown & Column Pruning
+        ↓
+  [4. Physical Plan Generator]  --> Compiles into Directed Acyclic Graph (DAG)
+        ↓
+  [5. Vectorized ORC Execution] --> Executes across data splits reading compressed stripes
+        ↓
+Aggregated Result Records
+```
+
+#### Key Hive Optimizations Demonstrated:
+1. **Dynamic Partition Pruning:** Queries with `WHERE transportation_mode = 'Air'` immediately filter out unrelated partition directories on disk, saving up to 75% I/O overhead.
+2. **ORC Vectorized Reader:** Operates on arrays of 1,024 values per CPU cycle instead of row-by-row iteration, reducing function call overhead and maximizing cache locality.
+3. **Stripe-Level Statistics:** ORC stripes contain min/max indexes per column. If a query filters for `distance_km > 1000`, stripes where `max(distance_km) < 1000` are completely skipped without decompression.
+
+---
+
+### 2. MapReduce Streaming Aggregation Algorithm
 
 The Hadoop Streaming MapReduce pipeline processes millions of raw shipment lines via standard I/O streams:
 
@@ -9,7 +40,7 @@ The Hadoop Streaming MapReduce pipeline processes millions of raw shipment lines
 Input:  Stream of CSV lines from STDIN
 Output: Tab-delimited (Key, Value) pairs on STDOUT
 
-1. Detect header row; identify indices for:
+1. Detect header row; identify column indices for:
    origin_city, destination_city, carrier, vehicle_type, is_delayed, delay_minutes.
 2. For each subsequent line in STDIN:
    a. Parse comma-separated fields.
@@ -44,58 +75,55 @@ Output: Aggregated metrics TSV on STDOUT
 
 ---
 
-### 2. PySpark In-Memory DataFrame Processing Algorithm
+### 3. PySpark In-Memory DataFrame Processing Algorithm
 
-The PySpark ETL pipeline (`bigdata/spark/shipment_processor.py`) optimizes memory and CPU core utilization:
+The PySpark ETL pipeline (`bigdata/spark/shipment_processor.py`) utilizes in-memory Catalyst optimizations:
 
 ```text
-1. Initialize SparkSession with driver memory 2GB and local[*] master.
-2. Spark DataFrame Read:
-   raw_df ← spark.read.option("header", "true").option("inferSchema", "true").csv(path)
-3. Deduplication:
-   dedup_df ← raw_df.dropDuplicates(["shipment_id"])
-4. Type Enforcement & Casting:
-   Cast distance_km, weight_kg to DoubleType; is_delayed to IntegerType.
-   Convert string timestamps to TimestampType via F.to_timestamp().
-5. Missing Value Imputation:
-   Compute Column Means for distance_km and weight_kg using F.avg().
-   Impute null values via clean_df.na.fill().
-6. Feature Extraction:
-   Derive scheduled_hour ← F.hour(scheduled_pickup)
-   Derive scheduled_day_of_week ← F.dayofweek(scheduled_pickup)
-   Derive scheduled_month ← F.month(scheduled_pickup)
-   Derive planned_transit_hours ← (unix_timestamp(delivery) - unix_timestamp(pickup)) / 3600
-7. Distributed Partition Persistence:
-   Save to data/processed/shipments_clean/clean_shipments.csv
+Algorithm 3: Distributed DataFrame ETL
+1. Load raw CSV into Spark DataFrame with schema inference.
+2. Deduplicate records based on unique shipment_id.
+3. Impute missing numeric values using column medians.
+4. Compute derived temporal columns:
+   - scheduled_hour ← hour(to_timestamp(scheduled_pickup))
+   - scheduled_day_of_week ← dayofweek(to_timestamp(scheduled_pickup))
+   - scheduled_month ← month(to_timestamp(scheduled_pickup))
+5. Partition dataset by transportation_mode and persist to data/processed/.
 ```
 
 ---
 
-### 3. Machine Learning: Random Forest Classification Algorithm
+### 4. Machine Learning Classification & Methodology
 
-#### Algorithm 3: Delay Prediction Model Training (`ml/train_model.py`)
-```text
-Input: Clean historical shipments dataset
-Output: Serialized Pipeline (.joblib) & Evaluation Report JSON
+To classify shipments into On-Time vs Delayed before dispatch, we employ supervised classification with strict **zero target leakage**.
 
-1. Preprocessing (No Target Leakage):
-   Features X ← {distance_km, weight_kg, scheduled_hour, scheduled_day_of_week, scheduled_month,
-                 vehicle_type, carrier, category, origin_city, destination_city}
-   Target y ← {is_delayed} (0 or 1)
-   EXCLUDE: actual_pickup, actual_delivery, delay_minutes, delay_reason, status.
-2. Stratified Train/Test Split:
-   (X_train, X_test, y_train, y_test) ← train_test_split(X, y, test_size=0.20, stratify=y, random_state=42)
-3. Construct Feature Pipeline:
-   ColumnTransformer:
-     - Numeric: StandardScaler()
-     - Categorical: OneHotEncoder(handle_unknown='ignore')
-4. Model 1 (Baseline):
-   Fit LogisticRegression(max_iter=500) on X_train.
-   Compute Baseline Accuracy, Precision, Recall, F1 on X_test.
-5. Model 2 (Primary Classifier):
-   Fit RandomForestClassifier(n_estimators=100, max_depth=12, random_state=42) on X_train.
-   Compute Primary Accuracy, Precision, Recall, F1, Confusion Matrix on X_test.
-6. Extract Gini Feature Importances from Random Forest ensemble.
-7. Save serialized model to data/models/delay_predictor.joblib.
-```
+#### 4.1 Feature Selection (Pre-Dispatch Only)
+| Feature Name | Type | Description |
+|---|---|---|
+| `origin_city` | Categorical (One-Hot) | Departure metropolis |
+| `destination_city`| Categorical (One-Hot) | Arrival metropolis |
+| `carrier` | Categorical (One-Hot) | Operating logistics company |
+| `vehicle_type` | Categorical (One-Hot) | Transportation vehicle category |
+| `category` | Categorical (One-Hot) | Cargo commodity type |
+| `distance_km` | Numeric (Scaled) | Total transit road/air distance |
+| `weight_kg` | Numeric (Scaled) | Cargo mass |
+| `scheduled_hour` | Numeric (Cyclical) | Hour of scheduled departure (0-23) |
+| `scheduled_day_of_week` | Numeric (Cyclical) | Day of week (1-7) |
+| `scheduled_month`| Numeric (Cyclical) | Calendar month (1-12) |
 
+*Excluded Target Leakage Variables:* `actual_delivery`, `actual_pickup`, `delay_minutes`, `delay_reason`, `delivery_duration_hours`.
+
+#### 4.2 Primary Candidate: Random Forest Classifier
+Ensemble of $B = 100$ decorrelated decision trees. For each tree $b$:
+1. Draw a bootstrap sample $Z^*$ of size $N$ from training data.
+2. Grow an unpruned tree $T_b$ by recursively partitioning nodes:
+   - Select $m = \sqrt{p}$ features at random from $p$ total features.
+   - Pick the best feature/split-point using Gini Impurity:
+     $$G = 1 - \sum_{k=1}^{C} p_k^2$$
+3. Aggregate predictions across all trees via majority voting / probability averaging:
+   $$\hat{P}(Y=1|x) = \frac{1}{B} \sum_{b=1}^{B} T_b(x)$$
+
+#### 4.3 Baseline Candidate: Logistic Regression
+Models the log-odds of a shipment delay as a linear combination of input features:
+$$\log\left(\frac{P(Y=1|x)}{1 - P(Y=1|x)}\right) = \beta_0 + \sum_{j=1}^{p} \beta_j x_j$$
+Trained using L-BFGS optimizer with $L_2$ regularization.

@@ -2,6 +2,7 @@
  * frontend/static/js/main.js
  * ===========================
  * Global UI helpers and dynamic system status polling.
+ * Project: Big Data Classification and Prediction for Transportation and Logistics using Apache Hive
  */
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -12,20 +13,31 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (json.success && json.data) {
             const comp = json.data.components;
             const storageBadge = document.getElementById("sys-storage");
-            const sparkBadge = document.getElementById("sys-spark");
 
             if (storageBadge && comp.storage) {
                 storageBadge.innerText = `Storage: ${comp.storage.mode.toUpperCase()}`;
                 storageBadge.className = comp.storage.mode === "hdfs" ? "badge badge-success" : "badge badge-info";
             }
-
-            if (sparkBadge && comp.spark) {
-                sparkBadge.innerText = `Spark: ${comp.spark.master}`;
-                sparkBadge.className = "badge badge-success";
-            }
         }
     } catch (e) {
         console.warn("Health check unreachable", e);
     }
-});
 
+    // Check Hive status
+    try {
+        const res = await fetch("/api/v1/hive/status");
+        const json = await res.json();
+        const hiveBadge = document.getElementById("sys-hive");
+        if (hiveBadge && json.success && json.data) {
+            if (json.data.hive_connected) {
+                hiveBadge.innerText = `🐝 Hive: ${json.data.database_name} (${json.data.table_count} tables)`;
+                hiveBadge.className = "badge badge-success";
+            } else {
+                hiveBadge.innerText = "🐝 Hive: Offline";
+                hiveBadge.className = "badge badge-warning";
+            }
+        }
+    } catch (e) {
+        console.warn("Hive status check failed", e);
+    }
+});

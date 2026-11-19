@@ -1,34 +1,49 @@
 {% extends "base.html" %}
 
-{% block page_title %}Logistics Intelligence Dashboard{% endblock %}
+{% block page_title %}Big Data Analytics Overview{% endblock %}
 
 {% block content %}
+<!-- Project Official Header Banner -->
+<div class="project-banner">
+    <div>
+        <div class="project-banner-title">Big Data Classification and Prediction for Transportation and Logistics using Apache Hive</div>
+        <div class="project-banner-sub">
+            High-Performance Big Data Analytics · Apache Hive Storage & Warehouse · Machine Learning Classification
+        </div>
+    </div>
+    <div>
+        <a href="/hive-page" class="btn btn-outline" style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.4);">
+            🐝 Run HiveQL Queries
+        </a>
+    </div>
+</div>
+
 <!-- KPI Overview Cards -->
 <div class="kpi-grid">
     <div class="kpi-card">
         <span class="kpi-label">Total Shipments</span>
         <div class="kpi-value" id="kpi-total">--</div>
-        <span class="kpi-sub" id="kpi-total-sub">Processed through BDT pipeline</span>
+        <span class="kpi-sub">Apache Hive Warehouse Volume</span>
     </div>
     <div class="kpi-card">
         <span class="kpi-label">On-Time Deliveries</span>
         <div class="kpi-value" style="color: var(--success);" id="kpi-ontime">--</div>
-        <span class="kpi-sub" id="kpi-ontime-sub">Successful deliveries</span>
+        <span class="kpi-sub">Classified On-Time Deliveries</span>
     </div>
     <div class="kpi-card">
         <span class="kpi-label">Delayed Shipments</span>
         <div class="kpi-value" style="color: var(--danger);" id="kpi-delayed">--</div>
-        <span class="kpi-sub" id="kpi-delayed-sub">Exceeded planned delivery</span>
+        <span class="kpi-sub">Classified Transit Delays</span>
     </div>
     <div class="kpi-card">
         <span class="kpi-label">Delay Percentage</span>
         <div class="kpi-value" style="color: var(--warning);" id="kpi-delay-rate">--%</div>
-        <span class="kpi-sub">Overall system delay frequency</span>
+        <span class="kpi-sub">Overall Delay Frequency</span>
     </div>
     <div class="kpi-card">
         <span class="kpi-label">Average Delay</span>
         <div class="kpi-value" id="kpi-avg-delay">-- mins</div>
-        <span class="kpi-sub">Mean delay duration</span>
+        <span class="kpi-sub">Mean Delay Duration</span>
     </div>
 </div>
 
@@ -36,7 +51,8 @@
 <div class="grid-2col">
     <div class="card-panel">
         <div class="card-header">
-            <h2 class="card-title">Delay Contributors Breakdown</h2>
+            <h2 class="card-title">Delay Contributors Breakdown (Hive Aggregated)</h2>
+            <span class="badge badge-info">HiveQL Query</span>
         </div>
         <div style="height: 280px; position: relative;">
             <canvas id="delayReasonsChart"></canvas>
@@ -45,7 +61,8 @@
 
     <div class="card-panel">
         <div class="card-header">
-            <h2 class="card-title">Carrier Delay Performance</h2>
+            <h2 class="card-title">Carrier Comparative Delay Rates</h2>
+            <span class="badge badge-info">Carrier Patterns</span>
         </div>
         <div style="height: 280px; position: relative;">
             <canvas id="carrierPerformanceChart"></canvas>
@@ -56,10 +73,10 @@
 <!-- Recent Shipments & Quick Actions -->
 <div class="card-panel">
     <div class="card-header">
-        <h2 class="card-title">Recent Shipment Dispatches</h2>
+        <h2 class="card-title">Recent Shipment Dispatches & Classification Status</h2>
         <div style="display: flex; gap: 0.5rem;">
-            <a href="/shipments-page" class="btn btn-outline" style="font-size: 0.8rem;">View All Shipments</a>
-            <a href="/predict-page" class="btn btn-primary" style="font-size: 0.8rem;">+ Predict Delay</a>
+            <a href="/shipments-page" class="btn btn-outline" style="font-size: 0.8rem;">View Full Registry</a>
+            <a href="/predict-page" class="btn btn-primary" style="font-size: 0.8rem;">+ Predict Delay Risk</a>
         </div>
     </div>
     <div class="table-container">
@@ -69,15 +86,15 @@
                     <th>Shipment ID</th>
                     <th>Origin</th>
                     <th>Destination</th>
+                    <th>Transport Mode</th>
                     <th>Carrier</th>
-                    <th>Vehicle</th>
                     <th>Distance</th>
                     <th>Scheduled Delivery</th>
-                    <th>Status</th>
+                    <th>Classification Status</th>
                 </tr>
             </thead>
             <tbody id="recent-shipments-body">
-                <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading shipments...</td></tr>
+                <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Loading shipment records from Hive warehouse...</td></tr>
             </tbody>
         </table>
     </div>
@@ -114,15 +131,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                     labels: json.data.labels,
                     datasets: [{
                         data: json.data.counts,
-                        backgroundColor: ["#ef4444", "#f59e0b", "#38bdf8", "#6366f1", "#10b981", "#ec4899", "#8b5cf6"],
-                        borderWidth: 0,
+                        backgroundColor: ["#dc2626", "#d97706", "#2563eb", "#6366f1", "#059669", "#db2777", "#7c3aed"],
+                        borderWidth: 2,
+                        borderColor: "#ffffff",
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: "right", labels: { color: "#94a3b8", boxWidth: 12 } }
+                        legend: { position: "right", labels: { color: "#475569", boxWidth: 12, font: { weight: 600 } } }
                     }
                 }
             });
@@ -143,16 +161,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                     datasets: [{
                         label: "Delay Rate (%)",
                         data: json.data.delay_rates,
-                        backgroundColor: "#38bdf8",
-                        borderRadius: 4,
+                        backgroundColor: "#2563eb",
+                        borderRadius: 6,
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true, grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
-                        x: { grid: { display: false }, ticks: { color: "#94a3b8" } }
+                        y: { beginAtZero: true, grid: { color: "#f1f5f9" }, ticks: { color: "#64748b" } },
+                        x: { grid: { display: false }, ticks: { color: "#64748b" } }
                     },
                     plugins: { legend: { display: false } }
                 }
@@ -177,8 +195,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <td><strong>${s.shipment_id}</strong></td>
                         <td>${s.origin_city}</td>
                         <td>${s.destination_city}</td>
+                        <td><span class="badge badge-info">${s.vehicle_type || 'Truck'}</span></td>
                         <td>${s.carrier}</td>
-                        <td>${s.vehicle_type}</td>
                         <td>${s.distance_km} km</td>
                         <td>${new Date(s.scheduled_delivery).toLocaleDateString()}</td>
                         <td><span class="badge ${badgeClass}">${statusText}</span></td>
@@ -186,7 +204,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 `;
             }).join("");
         } else {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No shipment records available. Ingest sample data from the Upload page.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No shipment records found. Initialise the Hive warehouse.</td></tr>`;
         }
     } catch (e) {
         console.error("Failed to load shipments", e);

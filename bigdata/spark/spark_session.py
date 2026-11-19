@@ -21,6 +21,7 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 _spark_session = None
 
 def get_spark_session(app_name: str = "LogisticsDelayAnalytics"):
@@ -49,7 +50,7 @@ def get_spark_session(app_name: str = "LogisticsDelayAnalytics"):
         logger.error("PySpark is not installed: %s. Install with: pip install pyspark", e)
         raise RuntimeError("PySpark is not installed.") from e
 
-    warehouse_dir = str(Config.DATA_DIR / "processed" / "spark-warehouse")
+    warehouse_dir = str(PROJECT_ROOT / "bigdata" / "hive" / "warehouse")
     os.makedirs(warehouse_dir, exist_ok=True)
 
     master = Config.SPARK_MASTER if Config.SPARK_MODE == "local" else Config.SPARK_MASTER
@@ -64,6 +65,9 @@ def get_spark_session(app_name: str = "LogisticsDelayAnalytics"):
         .config("spark.sql.shuffle.partitions", "4")  # Optimized for local dev
         .config("spark.ui.enabled", "false")          # Disable web UI in local test mode
         .config("spark.sql.execution.arrow.pyspark.enabled", "true")
+        .config("spark.sql.catalogImplementation", "hive")
+        .config("hive.metastore.warehouse.dir", warehouse_dir)
+        .enableHiveSupport()
     )
 
     try:

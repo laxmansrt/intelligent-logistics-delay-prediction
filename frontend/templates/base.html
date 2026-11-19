@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Logistics Intelligence Platform{% endblock %} | BDT Analytics</title>
+    <title>{% block title %}Big Data Classification and Prediction for Transportation and Logistics using Apache Hive{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/main.css">
     <!-- Chart.js from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,10 +14,10 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="brand">
-                <span class="brand-icon">🚚</span>
+                <span class="brand-icon">🐝</span>
                 <div>
-                    <div class="brand-title">Logistics BDT</div>
-                    <div class="brand-sub">Big Data Intelligence</div>
+                    <div class="brand-title">Apache Hive</div>
+                    <div class="brand-sub">Transportation & Logistics</div>
                 </div>
             </div>
             <ul class="nav-links">
@@ -27,39 +27,44 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="/hive-page" class="nav-link {% if request.path == '/hive-page' %}active{% endif %}">
+                        <span>🐝</span> Apache Hive Analytics
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="/shipments-page" class="nav-link {% if request.path == '/shipments-page' %}active{% endif %}">
-                        <span>📦</span> Shipment Tracking
+                        <span>📦</span> Shipment Registry
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="/predict-page" class="nav-link {% if request.path == '/predict-page' %}active{% endif %}">
-                        <span>🤖</span> Delay Prediction
+                        <span>🤖</span> Delay Classification
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="/analytics-page" class="nav-link {% if request.path == '/analytics-page' %}active{% endif %}">
-                        <span>📈</span> Delay & Route Analytics
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/processing-page" class="nav-link {% if request.path == '/processing-page' %}active{% endif %}">
-                        <span>⚡</span> Big Data Processing
+                        <span>📈</span> Route & Transport Patterns
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="/model-page" class="nav-link {% if request.path == '/model-page' %}active{% endif %}">
-                        <span>🎯</span> ML Model Metrics
+                        <span>🎯</span> ML Model Benchmarks
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/processing-page" class="nav-link {% if request.path == '/processing-page' %}active{% endif %}">
+                        <span>⚡</span> Distributed Processing
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="/upload-page" class="nav-link {% if request.path == '/upload-page' %}active{% endif %}">
-                        <span>📁</span> Ingestion & Upload
+                        <span>📁</span> Ingestion & Datasets
                     </a>
                 </li>
             </ul>
-            <div style="padding: 1.25rem; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--border-color);">
-                <div>BDT Technologies:</div>
-                <div style="color: var(--accent-blue); margin-top: 0.25rem;">PySpark · MapReduce · HDFS · MongoDB</div>
+            <div style="padding: 1.25rem; font-size: 0.75rem; color: #94a3b8; border-top: 1px solid #1e293b;">
+                <div style="font-weight: 600; color: #cbd5e1;">Big Data Technologies:</div>
+                <div style="color: #38bdf8; margin-top: 0.25rem;">Apache Hive · HiveQL · ORC · HDFS · Scikit-Learn</div>
             </div>
         </aside>
 
@@ -67,9 +72,9 @@
         <main class="main-content">
             <header class="topbar">
                 <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <span class="badge badge-info" id="sys-storage">Storage: Local</span>
-                    <span class="badge badge-success" id="sys-spark">Spark: Local[*]</span>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span class="badge badge-info" id="sys-hive">🐝 Hive: Connected</span>
+                    <span class="badge badge-success" id="sys-storage">Storage: HDFS Mirror</span>
                 </div>
             </header>
 
@@ -84,4 +89,3 @@
     {% block scripts %}{% endblock %}
 </body>
 </html>
-
